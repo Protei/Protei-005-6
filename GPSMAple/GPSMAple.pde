@@ -76,6 +76,10 @@ void parse_nmea_gps(void)
   long aux_min;
   char *parseptr;
   
+  if (bufferidx > 1022) { // buffer overflow, reset
+    bufferidx = 0;
+  }
+  
   if (strncmp(buffer,"$GPGGA",6)==0){        // Check if sentence begins with $GPGGA
     if (buffer[bufferidx-4]=='*'){           // Check for the "*" character
       NMEA_check = parseHex(buffer[bufferidx-3])*16 + parseHex(buffer[bufferidx-2]);    // Read the checksums characters

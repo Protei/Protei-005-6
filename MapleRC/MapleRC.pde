@@ -9,7 +9,7 @@
  */
 
 // the two output pins
-const int OUTPUT_1 = 0;
+const int OUTPUT_1 = 3;
 const int OUTPUT_2 = 14;
 
 boolean debug = false;
