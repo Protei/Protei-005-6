@@ -17,6 +17,8 @@ boolean debug = false;
 void setup() {
   pinMode(OUTPUT_1, PWM);
   pinMode(OUTPUT_2, PWM);
+  pinMode(3, PWM);
+  pinMode(4, OUTPUT);
   
   Serial1.begin(9600);
   SerialUSB.begin();
@@ -35,8 +37,16 @@ void loop() {
   }
   
   if (receive(&data1, &data2)) {
-    pwmWrite(OUTPUT_1, map(data1, 0, 255, 0, 65535));
+    if (data1 > 127) {
+      digitalWrite(4, HIGH);
+      pwmWrite(3, 65535 - map(data1, 128, 255, 0, 65535));
+    } else {
+      digitalWrite(4, LOW);
+      pwmWrite(3, 65535 - map(data1, 0, 127, 0, 65535));
+    }
+
     pwmWrite(OUTPUT_2, map(data2, 0, 255, 0, 65535));
+    
   }
 }
 

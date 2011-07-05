@@ -20,10 +20,10 @@ void setup() {
 
 void loop() {
   sensorValueJSL = analogRead(JOYSTICK_LEFT_IN); // read the left joystick
-  outputValueJSL = map(sensorValueJSL, 0, 1023, 0, 255); // map it to 8 bit values
+  outputValueJSL = mapWell(sensorValueJSL, 70, 1023, 0, 255); // map it to 8 bit values
   
   sensorValueJSR = analogRead(JOYSTICK_RIGHT_IN); // repeat for right joystick
-  outputValueJSR = map(sensorValueJSR, 0, 1023, 0, 255);
+  outputValueJSR = mapWell(sensorValueJSR, 0, 1012, 0, 255);
   
   sendBytes(outputValueJSL, outputValueJSR); // transmit the values
   
@@ -93,5 +93,15 @@ char hamming74Encode(char halfByte) {
     case B1111:
       return B11111111;
     return B0000;
+  }
+}
+
+int mapWell(int val, int lval, int hval, int lout, int hout) {
+  if (val < lval) {
+    return lout;
+  } else if (val > hval) {
+    return hout;
+  } else {
+    return map(val, lval, hval, lout, hout);
   }
 }
