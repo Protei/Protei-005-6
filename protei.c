@@ -33,11 +33,11 @@ boolean debug = false;
 unsigned long lastExecuted;
 unsigned long time;
 
-int motorRotations[3];
+volatile int motorRotations[3];
 int desiredRotations[3];
 int error[3];
 int integratedError[3];
-int currentDrive[3];
+volatile int currentDrive[3];
 
 void setup() {
   pinMode(EN_PINS[BOW], OUTPUT);
@@ -127,6 +127,7 @@ void motorBreak(int motor) {
   pinMode(LPWM_PINS[motor], OUTPUT);
   digitalWrite(RPWM_PINS[motor], HIGH);
   digitalWrite(LPWM_PINS[motor], HIGH);
+  currentDrive[motor] = 0;
 }
 
 /*** PID Controllers
