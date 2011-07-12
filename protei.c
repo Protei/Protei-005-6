@@ -30,6 +30,8 @@ const int ROT_PINS[] = {29, 30, 31};
 const int LIMIT_A_PINS[] = {21, 22, 23};
 const int LIMIT_B_PINS[] = {28, 37, 36};
 
+const int CONTROL_LOOP_PERIOD = 50;
+
 // EXECUTION VARIABLES
 boolean debug = false;
 unsigned long lastExecuted;
@@ -90,8 +92,8 @@ void loop() {
   
   time = millis();
   
-  // The main control loop executes every 50 ms
-  if (((time - lastExecuted) > 50) || ((time - lastExecuted) < 0)) {
+  // The main control loop executes every 50 ms (CONTROL_LOOP_PERIOD)
+  if (((time - lastExecuted) > CONTROL_LOOP_PERIOD) || ((time - lastExecuted) < 0)) {
     lastExecuted = time; // update our time watch
     
     debug = usbActive();
@@ -148,8 +150,8 @@ long PID(int motor) {
   int diffError;
   
   error[motor] = desiredRotations[motor] - motorRotations[motor]; // the current error
-  integratedError[motor] += error[motor];
-  diffError = error[motor] - lastError;
+  integratedError[motor] += error[motor] * (CONTROL_LOOP_PERIOD / 1000);
+  diffError = (error[motor] - lastError) / (CONTROL_LOOP_PERIOD / 1000);
   
   output = K_PRO[motor] * error[motor] + K_INT[motor] * integratedError[motor] + K_DER[motor] * diffError;
   
