@@ -1,18 +1,20 @@
-#define   BOW   0
-#define   STERN 1
-#define   WINCH 2
-
 // motors are indexed as follow:
 //  0 - bow articulation motor
 //  1 - stern articulation motor
 //  2 - sail whinch motor
+#define   BOW   0
+#define   STERN 1
+#define   WINCH 2
+
+// this needs to be measured and set manually
 const int MAX_MOTOR_ROTATIONS[] = {100, 100, 100};
 
 // PID GAIN DEFINITIONS
 // *** THESE HAVE NOT BEEN TUNED YET AND MIGHT BE UNSTABLE ***
-const int K_PRO[] = {100, 100, 100}; // the proportional gain
-const int K_DER[] = {1, 1, 1}; // the differential gain
-const int K_INT[] = {1, 1, 1}; // the intergral gain
+// I SUGGEST THAT THEY BE TUNED WITH THE Ziegler–Nichols METHOD
+const int K_PRO[] = {1000, 1000, 1000}; // the proportional gain
+const int K_DER[] = {100, 100, 100}; // the differential gain
+const int K_INT[] = {100, 100, 100}; // the intergral gain
 
 // PIN DEFINITIONS
 // motor drivers
@@ -40,6 +42,7 @@ int integratedError[3];
 volatile int currentDrive[3];
 
 void setup() {
+  // initialize pins
   pinMode(EN_PINS[BOW], OUTPUT);
   pinMode(EN_PINS[STERN], OUTPUT);
   pinMode(EN_PINS[WINCH], OUTPUT);
@@ -55,11 +58,13 @@ void setup() {
   pinMode(LIMIT_B_PINS[STERN], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[WINCH], INPUT_PULLUP);
   
-  digitalWrite(EN_PINS[BOW], HIGH); // enable the motor drivers
+  // enable the motor drivers
+  digitalWrite(EN_PINS[BOW], HIGH);
   digitalWrite(EN_PINS[STERN], HIGH);
   digitalWrite(EN_PINS[WINCH], HIGH);
   
-  attachInterrupt(ROT_PINS[BOW], countBow, RISING); // add interrupts for the sensors
+  // add interrupts for the sensors
+  attachInterrupt(ROT_PINS[BOW], countBow, RISING); 
   attachInterrupt(ROT_PINS[STERN], countStern, RISING);
   attachInterrupt(ROT_PINS[WINCH], countWinch, RISING);
   attachInterrupt(LIMIT_A_PINS[BOW], resetBowA, FALLING);
@@ -68,7 +73,9 @@ void setup() {
   attachInterrupt(LIMIT_B_PINS[BOW], resetBowB, FALLING);
   attachInterrupt(LIMIT_B_PINS[STERN], resetSternB, FALLING);
   attachInterrupt(LIMIT_B_PINS[WINCH], resetWinchB, FALLING);
-  interrupts(); // start the interrupts
+  
+  // start the interrupts
+  interrupts(); 
   
   Serial1.begin(9600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
