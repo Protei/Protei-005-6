@@ -1,18 +1,18 @@
 MAPLE PIN	CONNECTION	REQUIRED FUNCTIONALITY	MAPLE HARDWARE DEVICE
 MOTOR DRIVER 1			
-4			ENA									DI/O
+4			ENA								DI/O
 0			RPWMA		PWM						Timer 2
 1			LPWMA		PWM						Timer 2
-5			ENB									DI/O
-2			RPWMB		PWM	Timer 2
-3			LPWMB		PWM	Timer 2
+5			ENB								DI/O
+2			RPWMB		PWM						Timer 2
+3			LPWMB		PWM						Timer 2
 XBEE			
-7			XBDIN		Tx	USART 1
-8			XBDOUT		Rx	USART 1
+7			XBDIN		Tx						USART 1
+8			XBDOUT		Rx						USART 1
 MOTOR DRIVER 2			
-6			ENA									DI/O
-11			RPWMA		PWM	Timer 3
-12			LPWMA		PWM	Timer 3
+6			ENA								DI/O
+11			RPWMA		PWM						Timer 3
+12			LPWMA		PWM						Timer 3
 MOTOR FEEDBACK			
 29			ROT1		int						EXTI10
 21			LIMIT1A		int						EXTI13
