@@ -1,58 +1,73 @@
+#define   BOW   0
+#define   STERN 1
+#define   WINCH 2
+
+// motors are indexed as follow:
+//  0 - bow articulation motor
+//  1 - stern articulation motor
+//  2 - sail whinch motor
+const int MAX_MOTOR_ROTATIONS[] = {100, 100, 100};
+
 // PID GAIN DEFINITIONS
 // *** THESE HAVE NOT BEEN TUNED YET AND MIGHT BE UNSTABLE ***
-const int K_PRO_HOR = 100; // the proportional gain
-const int K_DER_HOR = 1; // the differential gain
-const int K_INT_HOR = 1; // the intergral gain
-const int K_PRO_VER = 100; // the same, but for the vertical articulation motor
-const int K_DER_VER = 1;
-const int K_INT_VER = 1;
+const int K_PRO[] = {100, 100, 100}; // the proportional gain
+const int K_DER[] = {1, 1, 1}; // the differential gain
+const int K_INT[] = {1, 1, 1}; // the intergral gain
 
 // PIN DEFINITIONS
-const int R_PWM_H = 2; // Motor driver PWM pins
-const int L_PWM_H = 3;
-const int R_PWM_V = 0;
-const int R_PWM_V = 6;
-const int EN_H = 4; // motor drive enable pins
-const int EN_V = 10;
-const int XBEE_RX = 8; // xbee pins
-const int XBEE_TX = 7;
-const int H_ROT = 32; // sensing pins, the rotation and the limit switch
-const int V_ROT = 33;
-const int H_LIMIT = 23;
-const int V_LIMIT = 34;
+// motor drivers
+const int EN_PINS[] = {4, 5, 6};
+const int RPWM_PINS[] = {0, 2, 11};
+const int LPWM_PINS[] = {1, 3, 12};
+// xbee
+const int XBEE_TX_PIN = 7;
+const int XBEE_RX_PIN = 8;
 
+// motor feedback interrupt pins
+const int ROT_PINS[] = {29, 30, 31};
+const int LIMIT_A_PINS[] = {21, 22, 23};
+const int LIMIT_B_PINS[] = {32, 33, 34};
+
+// EXECUTION VARIABLES
 boolean debug = false;
 unsigned long lastExecuted;
 unsigned long time;
 
-unsigned int hArtMotorRotations;
-unsigned int vArtMotorRotations;
-unsigned int hArtDesiredRotations;
-unsigned int vArtDesiredRotations;
-int hArtError;
-int vArtError;
-int hTotalError;
-int vTotalError;
-int currentHOut;
-int currentVOut;
+int motorRotations[3];
+int desiredRotations[3];
+int error[3];
+int integratedError[3];
+int currentDrive[3];
 
 void setup() {
-  pinMode(XBEE_RX, INPUT);
-  pinMode(XBEE_TX, OUTPUT);
-  pinMode(H_ROT, INPUT);
-  pinMode(V_ROT, INPUT);
-  pinMode(H_LIMIT, INPUT);
-  pinMode(V_LIMIT, INPUT);
-  pinMode(EN_H, OUTPUT);
-  pinMode(EN_V, OUTPUT);
+  pinMode(EN_PINS[BOW], OUTPUT);
+  pinMode(EN_PINS[STERN], OUTPUT);
+  pinMode(EN_PINS[WINCH], OUTPUT);
+  pinMode(XBEE_TX_PIN, OUTPUT);
+  pinMode(XBEE_RX_PIN, INPUT);
+  pinMode(ROT_PINS[BOW], INPUT);
+  pinMode(ROT_PINS[STERN], INPUT);
+  pinMode(ROT_PINS[WINCH], INPUT);
+  pinMode(LIMIT_A_PINS[BOW], INPUT_PULLUP);
+  pinMode(LIMIT_A_PINS[STERN], INPUT_PULLUP);
+  pinMode(LIMIT_A_PINS[WINCH], INPUT_PULLUP);
+  pinMode(LIMIT_B_PINS[BOW], INPUT_PULLUP);
+  pinMode(LIMIT_B_PINS[STERN], INPUT_PULLUP);
+  pinMode(LIMIT_B_PINS[WINCH], INPUT_PULLUP);
   
-  digitalWrite(EN_H, HIGH); // enable the motor drivers
-  digitalWrite(EN_V, HIGH);
+  digitalWrite(EN_PINS[BOW], HIGH); // enable the motor drivers
+  digitalWrite(EN_PINS[STERN], HIGH);
+  digitalWrite(EN_PINS[WINCH], HIGH);
   
-  attachInterrupt(H_ROT, countH, CHANGE); // add interrupts for the sensors
-  attachInterrupt(V_ROT, countV, CHANGE);
-  attachInterrupt(H_LIMIT, resetH, FALLING);
-  attachInterrupt(V_LIMIT, resetV, FALLING);
+  attachInterrupt(ROT_PINS[BOW], countBow, RISING); // add interrupts for the sensors
+  attachInterrupt(ROT_PINS[STERN], countStern, RISING);
+  attachInterrupt(ROT_PINS[WINCH], countWinch, RISING);
+  attachInterrupt(LIMIT_A_PINS[BOW], resetBow, FALLING);
+  attachInterrupt(LIMIT_A_PINS[STERN], resetStern, FALLING);
+  attachInterrupt(LIMIT_A_PINS[WINCH], resetWinch, FALLING);
+  attachInterrupt(LIMIT_B_PINS[BOW], resetBow, FALLING);
+  attachInterrupt(LIMIT_B_PINS[STERN], resetStern, FALLING);
+  attachInterrupt(LIMIT_B_PINS[WINCH], resetWinch, FALLING);
   interrupts(); // start the interrupts
   
   Serial1.begin(9600); // begin Xbee serial comms
@@ -76,61 +91,59 @@ void loop() {
     
     // If we have received new data from the Xbee, use it to update desired position
     if (receive(&data1, &data2)) {
-      hArtDesiredRotations = data1;
-      vArtDesiredRotations = data2;
+      desiredRotations[0] = map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[0]);
+      // banana shape
+      desiredRotations[1] = MAX_MOTOR_ROTATIONS[1] - map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[1]);
+      desiredRotations[2] = map(data1, 0, 255, 0, MAX_MOTOR_ROTATIONS[2]);
     }
     
     // run the PID controllers
-    PIDHart();
-    PIDVart();
+    motorWrite(BOW, PID(BOW));
+    motorWrite(STERN, PID(STERN));
+    motorWrite(WINCH, PID(WINCH));
   }
 }
 
-/** MOTOR DRIVING MACRO *//
-void motorWrite(int pinR, int pinL, int val) {
+/** MOTOR DRIVING MACROS */
+//  motor - int between 0 and 2
+//  val - between -65535 and 65535, the vaue we want to drive the motor at
+void motorWrite(int motor, int val) {
   if (val > 0) {
-    pinMode(pinR, OUTPUT);
-    pinMode(pinL, PWM);
-    digitalWrite(pinR, HIGH);
-    pwmWrite(pinL, 65535 - (int) val);
+    pinMode(RPWM_PINS[motor], OUTPUT);
+    pinMode(LPWM_PINS[motor], PWM);
+    digitalWrite(RPWM_PINS[motor], HIGH);
+    pwmWrite(LPWM_PINS[motor], 65535 - (int) val);
   } else {
-    pinMode(pinR, PWM);
-    pinMode(pinL, OUTPUT);
-    digitalWrite(pinL, HIGH);
-    pwmWrite(pinR, 0 - (int) val);
+    pinMode(RPWM_PINS[motor], PWM);
+    pinMode(LPWM_PINS[motor], OUTPUT);
+    digitalWrite(LPWM_PINS[motor], HIGH);
+    pwmWrite(RPWM_PINS[motor], 0 - (int) val);
   }
+}
+
+// this function causes the motor to break
+void motorBreak(int motor) {
+  pinMode(RPWM_PINS[motor], OUTPUT);
+  pinMode(LPWM_PINS[motor], OUTPUT);
+  digitalWrite(RPWM_PINS[motor], HIGH);
+  digitalWrite(LPWM_PINS[motor], HIGH);
 }
 
 /*** PID Controllers
-The following two functions calculate the error between the current motor position
+The following functions calculate the error between the current motor position
 and the desired motor position, then drive the motor to reach the desired motor
 position, using a PID (Proportional + Integral + Differential) control loop to adjust
 the output intensity */
-void PIDHArt() {
-  long output; // the output variable
-  int lastError = hArtError;
-  hArtError = hArtDesiredRotations - hArtMotorRotations; // the current error 
-  hTotalError += hArtError; // the integrated error
+long PID(int motor) {
+  long output; // the output var
+  int lastError = error[motor];
+  int diffError;
   
-  output = K_PRO_HOR * hArtError + K_DER_HOR * (hArtError - lastError) + K_INT_HOR * hTotalError;
+  error[motor] = desiredRotations[motor] - motorRotations[motor]; // the current error
+  integratedError[motor] += error[motor];
+  diffError = error[motor] - lastError;
   
-  if (output > 65535) {
-    output = 65535;
-  } else if (output < -65535) {
-    output = -65535;
-  }
-  
-  currentHOut = output;
-  motorWrite(R_PWM_H, L_PWM_H, output); // write the output
-}
-
-void PIDVArt() {
-  long output;
-  int lastError = vArtError;
-  vArtError = vArtDesiredRotations - vArtMotorRotations;
-  vTotalError += vArtError;
-  
-  output = K_PRO_VER * vArtError + K_DER_VER * (vArtError - lastError) + K_INT_VER * vTotalError;
+  output = K_PRO[motor] * error[motor] + K_INT[motor] * integratedError[motor] + K_DER[motor] * diffError;
   
   if (output > 65535) {
     output = 65535;
@@ -138,45 +151,51 @@ void PIDVArt() {
     output = -65535;
   }
   
-  currentVOut = output;
-  
-  motorWrite(R_PWM_V, L_PWM_V, output);
+  return output;
 }
 
 /** INTERRUPT SERVICE ROUTINES */
-void countH() {
-  if (currentHOut > 0) {
-    hArtMotorRotations++;
+void countBow() {
+  count(BOW);
+}
+
+void countStern() {
+  count(STERN);
+}
+
+void countWinch() {
+  count(WINCH);
+}
+
+void count(int motor) {
+  // what direction are we turning
+  if (currentDrive[motor] > 0) {
+    motorRotations[motor]++;
   } else {
-    hArtMotorRotations--;
+    motorRotations[motor]--;
   }
 }
 
-void countV() {
-  if (currentVOut > 0) {
-    vArtMotorRotations++;
+void resetCount(int motor) {
+  motorBreak(motor);
+  
+  if (digitalRead(LIMIT_A_PINS[motor]) == LOW) {
+    motorRotations[motor] = 0;
   } else {
-    vArtMotorRotations--;
+    motorRotations[motor] = MAX_MOTOR_ROTATIONS[motor];
   }
 }
 
-
-void resetH() {
-  // reset the rotations count
-  hArtMotorRotations = 0;
-  
-  // stop the motor;
-  motorWrite(R_PWM_H, L_PWM_H, 0);
-  currentHOut = 0;
+void resetBow() {
+  resetCount(BOW);
 }
 
-void resetV() {
-  // reset the rotations count
-  vArtMotorRotations = 0;
-  
-  // stop the motor
-  motorWrite(R_PWM_V, L_PWM_V, 0);
-  currentVOut = 0;
+void resetStern() {
+  resetCount(STERN);
+}
+
+void resetWinch() {
+  resetCount(WINCH);
 }
 
 /*** COMMUNICATION SUBROUTINES */
