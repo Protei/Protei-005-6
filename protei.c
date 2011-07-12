@@ -26,7 +26,7 @@ const int XBEE_RX_PIN = 8;
 // motor feedback interrupt pins
 const int ROT_PINS[] = {29, 30, 31};
 const int LIMIT_A_PINS[] = {21, 22, 23};
-const int LIMIT_B_PINS[] = {32, 33, 34};
+const int LIMIT_B_PINS[] = {28, 37, 36};
 
 // EXECUTION VARIABLES
 boolean debug = false;
@@ -62,12 +62,12 @@ void setup() {
   attachInterrupt(ROT_PINS[BOW], countBow, RISING); // add interrupts for the sensors
   attachInterrupt(ROT_PINS[STERN], countStern, RISING);
   attachInterrupt(ROT_PINS[WINCH], countWinch, RISING);
-  attachInterrupt(LIMIT_A_PINS[BOW], resetBow, FALLING);
-  attachInterrupt(LIMIT_A_PINS[STERN], resetStern, FALLING);
-  attachInterrupt(LIMIT_A_PINS[WINCH], resetWinch, FALLING);
-  attachInterrupt(LIMIT_B_PINS[BOW], resetBow, FALLING);
-  attachInterrupt(LIMIT_B_PINS[STERN], resetStern, FALLING);
-  attachInterrupt(LIMIT_B_PINS[WINCH], resetWinch, FALLING);
+  attachInterrupt(LIMIT_A_PINS[BOW], resetBowA, FALLING);
+  attachInterrupt(LIMIT_A_PINS[STERN], resetSternA, FALLING);
+  attachInterrupt(LIMIT_A_PINS[WINCH], resetWinchA, FALLING);
+  attachInterrupt(LIMIT_B_PINS[BOW], resetBowB, FALLING);
+  attachInterrupt(LIMIT_B_PINS[STERN], resetSternB, FALLING);
+  attachInterrupt(LIMIT_B_PINS[WINCH], resetWinchB, FALLING);
   interrupts(); // start the interrupts
   
   Serial1.begin(9600); // begin Xbee serial comms
@@ -177,26 +177,38 @@ void count(int motor) {
   }
 }
 
-void resetCount(int motor) {
+void resetCount(int motor, boolean direction) {
   motorBreak(motor);
   
-  if (digitalRead(LIMIT_A_PINS[motor]) == LOW) {
-    motorRotations[motor] = 0;
-  } else {
+  if (direction) {
     motorRotations[motor] = MAX_MOTOR_ROTATIONS[motor];
+  } else {
+    motorRotations[motor] = 0;
   }
 }
 
-void resetBow() {
-  resetCount(BOW);
+void resetBowA() {
+  resetCount(BOW, false);
 }
 
-void resetStern() {
-  resetCount(STERN);
+void resetSternA() {
+  resetCount(STERN, false);
 }
 
-void resetWinch() {
-  resetCount(WINCH);
+void resetWinchA() {
+  resetCount(WINCH, false);
+}
+
+void resetBowB() {
+  resetCount(BOW, true);
+}
+
+void resetSternB() {
+  resetCount(STERN, true);
+}
+
+void resetWinchB() {
+  resetCount(WINCH, true);
 }
 
 /*** COMMUNICATION SUBROUTINES */
