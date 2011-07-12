@@ -55,13 +55,6 @@ void setup() {
   attachInterrupt(V_LIMIT, resetV, FALLING);
   interrupts(); // start the interrupts
   
-  // get the timer ready to help with the hardware interrupts
-  Timer3.setChannel1Mode(TIMER_OUTPUTCOMPARE);
-  Timer3.setPeriod(10000);
-  Timer3.setCompare1(1);
-  Timer3.attachInterrupt(1, beginExtInts);
-  Timer3.pause();
-  
   Serial1.begin(9600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
 }
@@ -157,10 +150,6 @@ void countH() {
   } else {
     hArtMotorRotations--;
   }
-  
-  detachInterrupt(H_ROT);
-  Timer3.setCount(0);
-  Timer3.resume();
 }
 
 void countV() {
@@ -169,10 +158,6 @@ void countV() {
   } else {
     vArtMotorRotations--;
   }
-  
-  detachInterrupt(V_ROT);
-  Timer3.setCount(0);
-  Timer3.resume();
 }
 
 
@@ -192,12 +177,6 @@ void resetV() {
   // stop the motor
   motorWrite(R_PWM_V, L_PWM_V, 0);
   currentVOut = 0;
-}
-
-void beginExtInts() {
-  attachInterrupt(H_ROT, countH, CHANGE);
-  attachInterrupt(V_ROT, countV, CHANGE);
-  Timer3.pause();
 }
 
 /*** COMMUNICATION SUBROUTINES */
