@@ -41,7 +41,7 @@ void motorWrite(int motor, int val) {
     pinMode(RPWM_PINS[motor], PWM);
     pinMode(LPWM_PINS[motor], OUTPUT);
     digitalWrite(LPWM_PINS[motor], HIGH);
-    pwmWrite(RPWM_PINS[motor], 0 - (int) val);
+    pwmWrite(RPWM_PINS[motor], 65535 + (int) val);
   }
 }
 
