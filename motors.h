@@ -1,6 +1,6 @@
 /*
 	Protei — Remote Control and Motor Control
-    Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+    Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou, François de la Taste
 
 	This file is part of Protei.
 	
