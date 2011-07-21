@@ -15,7 +15,7 @@ int sensorValueJSR;
 int outputValueJSR;
 
 void setup() {
-  Serial.begin(9600); // initialize serial
+  Serial.begin(57600); // initialize serial
 }
 
 void loop() {
@@ -27,7 +27,7 @@ void loop() {
   
   sendBytes(outputValueJSL, outputValueJSR); // transmit the values
   
-  delay(10);
+  delay(50);
 }
   
 // TRANSMITS JOYSTICK VALUES

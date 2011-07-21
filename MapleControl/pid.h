@@ -67,14 +67,15 @@ long PID(int motor) {
   }
   
   if(debug &&  (usbElapsCounter >= usbDebugRate))  {
-    
+     SerialUSB.println("error\tint_err\tdif_err\toutput\tcount");
      SerialUSB.print(error[motor]);
      SerialUSB.print('\t');
      SerialUSB.print(integratedError[motor]);
      SerialUSB.print('\t');
      SerialUSB.print(diffError);
      SerialUSB.print('\t');   
-    SerialUSB.print(output); }
+     SerialUSB.print(output);
+  }
    return output;
 }
 

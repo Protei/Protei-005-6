@@ -53,6 +53,6 @@ const int ROT_PINS[] 		= {29, 30, 31};
 const int LIMIT_A_PINS[] 	= {21, 22, 23};
 const int LIMIT_B_PINS[] 	= {28, 37, 36};
 
-const int CONTROL_LOOP_PERIOD = 100;
+const int CONTROL_LOOP_PERIOD = 50;
 const int usbDebugRate = 5;
 

@@ -91,7 +91,7 @@ void setup() {
   // start the interrupts
   interrupts(); 
   
- // Serial1.begin(57600); // begin Xbee serial comms
+  Serial1.begin(57600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
   
   
@@ -134,10 +134,8 @@ void loop() {
 //  char JSL,JSR;
 //  SerialUSB.print(receive(&JSL,&JSR));
 //   SerialUSB.print('\n');
-   
-   SerialUSB.println((int) data2);
-        desiredRotations[2] = 127;
-        int PIDvalue =  PID(2);      
+
+        int PIDvalue =  PID(2);
         //if(abs(lastPIDvalue[motorNumber] - PIDvalue) > 100)
         motorWrite(2, PIDvalue);
      
