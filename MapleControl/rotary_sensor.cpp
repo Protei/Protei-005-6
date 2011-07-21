@@ -22,7 +22,7 @@
 #include "WProgram.h"
 #include "rotary_sensor.h"
 
-RotarySensor::RotarySensor(){
+RotarySensor::RotarySensor() {
   
 }
 
@@ -33,11 +33,11 @@ void RotarySensor::init(int pin) {
  
 }
 
-void RotarySensor::rotateCounter(int direction){
- if(direction ==1)
- numberOfRotations++;
+void RotarySensor::rotateCounter(int direction) {
+ if (direction == 1)
+   numberOfRotations++;
  else 
- numberOfRotations--;
+   numberOfRotations--;
 }
 
 long RotarySensor::getCounter() {

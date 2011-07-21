@@ -22,18 +22,14 @@
 
 class RotarySensor {
   public:
-  // Constructor
-  RotarySensor();
-  void init(int pin) ;
-  void rotateCounter(int direction);
-  long getCounter();
-  void resetCounter();
-  
+    RotarySensor(); // constructor
+    void init(int pin) ;
+    void rotateCounter(int direction);
+    long getCounter();
+    void resetCounter();
   private:
-  
-  int pinNumber;
-  long numberOfRotations;
-  
+    int pinNumber;
+    long numberOfRotations;
 };
 
 

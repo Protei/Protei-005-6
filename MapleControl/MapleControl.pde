@@ -36,7 +36,6 @@ int stopwatch;
 
 int usbElapsCounter;
 
-
 #include "consts.h" 	        // File containing constants defininitions
 #include "comm.h"	 	// File containing communication subroutines
 #include "motors.h"		// File containing motor control subroutines
