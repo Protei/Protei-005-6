@@ -1,22 +1,22 @@
 /*
 	Protei — Remote Control and Motor Control
-    Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
-
-	This file is part of Protei.
-	
-	Protei is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Protei is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program (see COPYING).  If not, see <http://www.gnu.org/licenses/>.
-*/
+ Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ 
+ 	This file is part of Protei.
+ 	
+ 	Protei is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ Protei is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program (see COPYING).  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** COMMUNICATION SUBROUTINES */
 
@@ -42,7 +42,7 @@ boolean receive(char *data1, char *data2) {
 
   if (Serial1.available() >  5) {
     byteRead = Serial1.read();
-    
+
     if (byteRead == 'S') { // start byte recieved
       halfByte1A = Serial1.read();
       halfByte1B = Serial1.read();
@@ -51,37 +51,43 @@ boolean receive(char *data1, char *data2) {
       byteRead = Serial1.read();
     }
   }
-  
+
   if (byteRead == 'E') { // end byte recieved
-    if (debug) { SerialUSB.println("Recieved a complete packet. Data:"); }
+    if (debug) { 
+      SerialUSB.println("Recieved a complete packet. Data:"); 
+    }
     halfByte1A = hamming74Decode(halfByte1A);
     halfByte1B = hamming74Decode(halfByte1B);
     halfByte2A = hamming74Decode(halfByte2A);
     halfByte2B = hamming74Decode(halfByte2B);
-    
+
     if (halfByte1A == 0xFF || halfByte2A == 0xFF || halfByte1B == 0xFF || halfByte2B == 0xFF) {
       // multiple bit errors, recovery impossible
-      if (debug) { SerialUSB.println("Multiple bit errors. Recovery impossible."); }
-      
+      if (debug) { 
+        SerialUSB.println("Multiple bit errors. Recovery impossible."); 
+      }
+
       return false;
-    } else {
+    } 
+    else {
       *data1 = (halfByte1A & B00001111) + ((halfByte1B << 4) & B11110000);
       *data2 = (halfByte2A & B00001111) + ((halfByte2B << 4) & B11110000);
-      
+
       if (debug) {
         SerialUSB.print("Data1: ");   
         SerialUSB.println(((int) *data1));
         SerialUSB.print("Data2: ");
         SerialUSB.println(((int) *data2));
       }
-      
+
       return true;      
     }
-  } else {
+  } 
+  else {
     return false;
   }
 }
- 
+
 // This function takes a byte that has 4 data bits, 3 Hamming(7,4) parity bits and
 // one overall parity bit, in that order (LSB is the overall parity bit), and decodes
 // it into the original 4 data bits, correcting any single bit error. It then returns
@@ -93,61 +99,62 @@ char hamming74Decode(char halfByte) {
   char syndrome;
   char correctedHalfByte;
   char parity;
-  
+
   // load the bit array with each of the bits in halfByte
   for (int i = 0; i < 8; i++) {
     bits[i] = halfByte & B00000001;
     halfByte = halfByte >> 1;
   }
-  
+
   // compute the syndrome bits
   e1 = (bits[4] + bits[5] + bits[7] + bits[1]) % 2;
   e2 = (bits[4] + bits[6] + bits[7] + bits[2]) % 2;
   e3 = (bits[5] + bits[6] + bits[7] + bits[3]) % 2;
-  
+
   syndrome = (e3 << 2) + (e2 << 1) + e1;
-  
+
   // fix the problems detected by the syndrome bits
   switch (syndrome) {
-    case B000:
-      break;
-    case B001:
-      bits[1] = ~bits[1] & B00000001;
-      break;
-    case B010:
-      bits[2] = ~bits[2] & B00000001;
-      break;
-    case B011:
-      bits[4] = ~bits[4] & B00000001;
-      break;
-    case B100:
-      bits[3] = ~bits[3] & B00000001;
-      break;
-    case B101:
-      bits[5] = ~bits[5] & B00000001;
-      break;
-    case B110:
-      bits[6] = ~bits[6] & B00000001;
-      break;
-    case B111:
-      bits[7] = ~bits[7] & B00000001;
-      break;
+  case B000:
+    break;
+  case B001:
+    bits[1] = ~bits[1] & B00000001;
+    break;
+  case B010:
+    bits[2] = ~bits[2] & B00000001;
+    break;
+  case B011:
+    bits[4] = ~bits[4] & B00000001;
+    break;
+  case B100:
+    bits[3] = ~bits[3] & B00000001;
+    break;
+  case B101:
+    bits[5] = ~bits[5] & B00000001;
+    break;
+  case B110:
+    bits[6] = ~bits[6] & B00000001;
+    break;
+  case B111:
+    bits[7] = ~bits[7] & B00000001;
+    break;
   }
-  
+
   // compute the overall parity bit
   parity = (bits[7] + bits[1] + bits[2] + bits[3] + bits[4] + bits[5] + bits[6]) % 2;
-  
+
   // check for multiple bit errors
   if (parity & B00000001 != bits[0] & B0000001) { // more than one bad bit, we can't recover errors
     return 0xFF; // Every other returned value will be only be 4 bits, so this error value is
-                 // easily detectable
+    // easily detectable
   }
-  
+
   correctedHalfByte = ((bits[7] << 3) + (bits[6] << 2) + (bits[5] << 1) + bits[4]) & B00001111;
-  
+
   return correctedHalfByte;
 }
 
 boolean usbActive() {
   return (SerialUSB.isConnected() && (SerialUSB.getDTR() || SerialUSB.getRTS()));
 }
+
