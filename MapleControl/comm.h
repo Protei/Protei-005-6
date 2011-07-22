@@ -42,6 +42,7 @@ boolean receive(char *data1, char *data2) {
 
   if (Serial1.available() >  5) {
     byteRead = Serial1.read();
+    SerialUSB.println((int) byteRead);
 
     if (byteRead == 'S') { // start byte recieved
       halfByte1A = Serial1.read();

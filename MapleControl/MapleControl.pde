@@ -42,15 +42,17 @@ int usbElapsCounter;
 //#include "motor.h"		// File containing motor control subroutines
 #include "motor_controller.h"
 
-Motor winch(WINCH);
-MotorController winchController(winch, GAIN[WINCH]);
+Motor bow;
+MotorController bowController;
 
 void setup() {
 
   usbElapsCounter = 0;
+  
+  bow.init(BOW);
+  bowController.init(&bow, GAIN[BOW]);
 
-
-  attachInterrupt(ROT_PINS[WINCH], countWinch, FALLING);
+  attachInterrupt(ROT_PINS[BOW], countBow, FALLING);
 
   // initialize pins
   pinMode(EN_PINS[BOW], OUTPUT);
@@ -67,6 +69,10 @@ void setup() {
   pinMode(LIMIT_B_PINS[BOW], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[STERN], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[WINCH], INPUT_PULLUP);
+  
+  
+  //attachInterrupt(LIMIT_A_PINS[WINCH], winchResetLow, FALLING);
+  //attachInterrupt(LIMIT_B_PINS[WINCH], winchResetHigh, FALLING);
 
   // enable the motor drivers
   digitalWrite(EN_PINS[BOW], HIGH);
@@ -92,14 +98,13 @@ void setup() {
   Serial1.begin(57600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
 
-
-
 }
 
 /*** THE MAIN LOOP ***
  * The loop body executes every 50ms, for a 20Hz control loop. This is kept in time with millis().
  */
 void loop() {
+
   char data1 = 0x00;
   char data2 = 0x00;
 
@@ -112,7 +117,7 @@ void loop() {
 
     // If we have received new data from the Xbee, use it to update desired position
     if (receive(&data1, &data2)) {
-      winchController.setTarget(map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[0]));
+      bowController.setTarget(map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[0]));
       // banana shape
       //desiredRotations[1] = MAX_MOTOR_ROTATIONS[1] - map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[1]);
       //desiredRotations[2] = map(data1, 0, 255, 0, MAX_MOTOR_ROTATIONS[2]);
@@ -131,15 +136,23 @@ void loop() {
     //  SerialUSB.print(receive(&JSL,&JSR));
     //   SerialUSB.print('\n');
 
-    int output = winchController.runLoop();
+    int output = bowController.runLoop();
+    
+    // check for limit switches. THIS IS A HACK SHOULD BE CHANGED TO BE IN THE MOTOR CLASS...
+    // also, interrupts don't work.
+    if ((digitalRead(LIMIT_A_PINS[BOW]) == 0 && bow.getDirection() == 0) || (digitalRead(LIMIT_B_PINS[BOW]) == 0 && bow.getDirection() == 1)) {
+      bow.brake();
+    }
 
     if(debug && (usbElapsCounter >=  usbDebugRate) ) {      
-      SerialUSB.println("error\toutput\trotations");
-      SerialUSB.print(winchController.getError());
+      SerialUSB.println("error\toutput\trot\tdesire");
+      SerialUSB.print(bowController.getError());
       SerialUSB.print("\t");
       SerialUSB.print(output);
       SerialUSB.print('\t');
-      SerialUSB.println(winch.getRotations());     
+      SerialUSB.print(bow.getRotations());
+      SerialUSB.print('\t');
+      SerialUSB.println(bowController.getTarget());
       usbElapsCounter = 0;
     }
     usbElapsCounter++;
@@ -155,8 +168,8 @@ void loop() {
  count(STERN);
  }*/
 
-void countWinch() {
-  winch.count();
+void countBow() {
+  bow.count();
 }
 
 /*
@@ -197,4 +210,5 @@ void resetCount(int motor, boolean direction) {
  void count(int motor)
  {}
  */
+
 

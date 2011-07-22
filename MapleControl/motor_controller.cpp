@@ -5,19 +5,15 @@
 MotorController::MotorController() {
 }
 
-MotorController::MotorController(Motor theMotor, int theGain) {
-  this->init(theMotor, theGain);
-}
-
-void MotorController::init(Motor theMotor, int theGain) {
+void MotorController::init(Motor*  theMotor, int theGain) {
   gain = theGain;
   motor = theMotor;
-  targetPosition = 0;
+  targetPosition = 40;
 }
 
 int MotorController::runLoop() {
   int output;
-  int error = targetPosition - motor.getRotations();
+  int error = targetPosition - (*motor).getRotations();
 
   if (abs(error) < 5) {
     output = 0;
@@ -32,7 +28,7 @@ int MotorController::runLoop() {
     }
   }
 
-  motor.move(output);
+  (*motor).move(output);
   return(output);
 }
 
@@ -41,6 +37,9 @@ void MotorController::setTarget(int newTarget) {
 }
 
 int MotorController::getError() {
-  return targetPosition - motor.getRotations();
+  return targetPosition - (*motor).getRotations();
 }
 
+int MotorController::getTarget() {
+  return targetPosition;
+}
