@@ -35,6 +35,9 @@ volatile int motorDirection[3]= {
 int motorNumber;
 int stopwatch;
 
+int lastBowCounted;
+int lastSternCounted;
+
 int usbElapsCounter;
 
 #include "consts.h" 	        // File containing constants defininitions
@@ -45,24 +48,29 @@ int usbElapsCounter;
 Motor bow;
 MotorController bowController;
 
-void setup() {
+Motor stern;
+MotorController sternController;
 
+void setup() {
   usbElapsCounter = 0;
   
   bow.init(BOW);
   bowController.init(&bow, GAIN[BOW]);
-
+  pinMode(ROT_PINS[BOW], INPUT);
   attachInterrupt(ROT_PINS[BOW], countBow, FALLING);
+  
+  stern.init(STERN);
+  sternController.init(&stern, GAIN[STERN]);
+  pinMode(ROT_PINS[STERN], INPUT);
+  attachInterrupt(ROT_PINS[STERN], countStern, FALLING);
 
   // initialize pins
   pinMode(EN_PINS[BOW], OUTPUT);
   pinMode(EN_PINS[STERN], OUTPUT);
   pinMode(EN_PINS[WINCH], OUTPUT);
-  pinMode(XBEE_TX_PIN, OUTPUT);
-  pinMode(XBEE_RX_PIN, INPUT);
-  pinMode(ROT_PINS[BOW], INPUT);
-  pinMode(ROT_PINS[STERN], INPUT);
-  pinMode(ROT_PINS[WINCH], INPUT);
+  //pinMode(XBEE_TX_PIN, OUTPUT);
+  //pinMode(XBEE_RX_PIN, INPUT);
+
   pinMode(LIMIT_A_PINS[BOW], INPUT_PULLUP);
   pinMode(LIMIT_A_PINS[STERN], INPUT_PULLUP);
   pinMode(LIMIT_A_PINS[WINCH], INPUT_PULLUP);
@@ -95,7 +103,7 @@ void setup() {
   // start the interrupts
   interrupts(); 
 
-  Serial1.begin(57600); // begin Xbee serial comms
+  Serial1.begin(9600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
 
 }
@@ -108,6 +116,7 @@ void loop() {
   char data1 = 0x00;
   char data2 = 0x00;
 
+
   time = millis();
 
   // The main control loop executes every 50 ms (CONTROL_LOOP_PERIOD)
@@ -117,42 +126,26 @@ void loop() {
 
     // If we have received new data from the Xbee, use it to update desired position
     if (receive(&data1, &data2)) {
-      bowController.setTarget(map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[0]));
+      bowController.setTarget(map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[BOW]));
+      sternController.setTarget(MAX_MOTOR_ROTATIONS[STERN] - map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[STERN]));
+      //stern.move(map(data2, 0, 255, -65535, 65535));
       // banana shape
       //desiredRotations[1] = MAX_MOTOR_ROTATIONS[1] - map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[1]);
       //desiredRotations[2] = map(data1, 0, 255, 0, MAX_MOTOR_ROTATIONS[2]);
     }
 
-    /*
-    // run the PID controllers
-     motorWrite(BOW, PID(BOW));
-     motorWrite(STERN, PID(STERN));
-     motorWrite(WINCH, PID(WINCH));
-     */
-
-    // SerialUSB.println(rotSens.getCounter());
-
-    //  char JSL,JSR;
-    //  SerialUSB.print(receive(&JSL,&JSR));
-    //   SerialUSB.print('\n');
-
     int output = bowController.runLoop();
-    
-    // check for limit switches. THIS IS A HACK SHOULD BE CHANGED TO BE IN THE MOTOR CLASS...
-    // also, interrupts don't work.
-    if ((digitalRead(LIMIT_A_PINS[BOW]) == 0 && bow.getDirection() == 0) || (digitalRead(LIMIT_B_PINS[BOW]) == 0 && bow.getDirection() == 1)) {
-      bow.brake();
-    }
+    int output2 = sternController.runLoop();
 
     if(debug && (usbElapsCounter >=  usbDebugRate) ) {      
       SerialUSB.println("error\toutput\trot\tdesire");
-      SerialUSB.print(bowController.getError());
+      SerialUSB.print(sternController.getError());
       SerialUSB.print("\t");
-      SerialUSB.print(output);
+      //SerialUSB.print(output2);
       SerialUSB.print('\t');
-      SerialUSB.print(bow.getRotations());
+      SerialUSB.print(stern.getRotations());
       SerialUSB.print('\t');
-      SerialUSB.println(bowController.getTarget());
+      SerialUSB.println(sternController.getTarget());
       usbElapsCounter = 0;
     }
     usbElapsCounter++;
@@ -160,16 +153,26 @@ void loop() {
 }
 
 /** INTERRUPT SERVICE ROUTINES */
-/*void countBow() {
- count(BOW);
- }
+/*void countWinch() {
+ winch.count();
+}
  
  void countStern() {
- count(STERN);
- }*/
+ stern.count();
+}*/
 
 void countBow() {
-  bow.count();
+  if (millis() - lastBowCounted > 30) {
+    lastBowCounted = millis();
+    bow.count();
+  }
+}
+
+void countStern() {
+  if (millis() - lastSternCounted > 30) {
+    lastSternCounted = millis();
+    stern.count();
+  }
 }
 
 /*

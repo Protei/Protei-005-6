@@ -39,22 +39,33 @@ boolean receive(char *data1, char *data2) {
   char halfByte1B;
   char halfByte2A;
   char halfByte2B;
-
-  if (Serial1.available() >  5) {
+  char buffer[128];
+  int i = 0;
+  int start;
+  
+  //SerialUSB.println(Serial1.available());
+  
+  while (Serial1.available() > 0) {
     byteRead = Serial1.read();
-    SerialUSB.println((int) byteRead);
-
-    if (byteRead == 'S') { // start byte recieved
+    
+    if (byteRead == 'S') {
+      while (Serial1.available() == 0);
       halfByte1A = Serial1.read();
+      while (Serial1.available() == 0);
       halfByte1B = Serial1.read();
+      while (Serial1.available() == 0);
       halfByte2A = Serial1.read();
+      while (Serial1.available() == 0);
       halfByte2B = Serial1.read();
+      while (Serial1.available() == 0);
       byteRead = Serial1.read();
+      break;
     }
   }
 
-  if (byteRead == 'E') { // end byte recieved
-    if (debug) { 
+  if (byteRead == 'E') { // end byte recieved successfully
+    Serial1.flush();
+    if (false) { 
       SerialUSB.println("Recieved a complete packet. Data:"); 
     }
     halfByte1A = hamming74Decode(halfByte1A);
@@ -74,7 +85,7 @@ boolean receive(char *data1, char *data2) {
       *data1 = (halfByte1A & B00001111) + ((halfByte1B << 4) & B11110000);
       *data2 = (halfByte2A & B00001111) + ((halfByte2B << 4) & B11110000);
 
-      if (debug) {
+      if (false) {
         SerialUSB.print("Data1: ");   
         SerialUSB.println(((int) *data1));
         SerialUSB.print("Data2: ");

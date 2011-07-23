@@ -30,11 +30,11 @@
 
 // this needs to be measured and set manually
 const int MAX_MOTOR_ROTATIONS[] = {
-  30, 100, 100};
+  107, 110, 100};
 
 
 const int GAIN[] = {
-  1000, 8000, 8000}; // the proportional gain
+  24000, 24000, 24000}; // the proportional gain
 
 
 // PIN DEFINITIONS

@@ -15,5 +15,6 @@ private:
   int motorNumber;
   int currentSpeed;
   int rotations;
+  int lastCounted;
 };
 

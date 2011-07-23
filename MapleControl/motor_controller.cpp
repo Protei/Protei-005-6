@@ -8,14 +8,14 @@ MotorController::MotorController() {
 void MotorController::init(Motor*  theMotor, int theGain) {
   gain = theGain;
   motor = theMotor;
-  targetPosition = 40;
+  targetPosition = 0;
 }
 
 int MotorController::runLoop() {
   int output;
   int error = targetPosition - (*motor).getRotations();
 
-  if (abs(error) < 5) {
+  if (abs(error) < 3) {
     output = 0;
   } 
   else {

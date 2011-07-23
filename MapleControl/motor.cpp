@@ -18,20 +18,30 @@ void Motor::init(int motor) {
 
 void Motor::move(int speed) {
   currentSpeed = speed;
-  if (speed == 0) {
-    (*this).brake();
-  } 
-  else if (speed > 0) {
-    pinMode(RPWM_PINS[motorNumber], OUTPUT);
-    pinMode(LPWM_PINS[motorNumber], PWM);
-    digitalWrite(RPWM_PINS[motorNumber], HIGH);
-    pwmWrite(LPWM_PINS[motorNumber], 65535 - speed);
-  } 
-  else {
-    pinMode(RPWM_PINS[motorNumber], PWM);
-    pinMode(LPWM_PINS[motorNumber], OUTPUT);
-    digitalWrite(LPWM_PINS[motorNumber], HIGH);
-    pwmWrite(RPWM_PINS[motorNumber], 65535 + speed);
+  int limitA = digitalRead(LIMIT_A_PINS[motorNumber]);
+  int limitB = digitalRead(LIMIT_B_PINS[motorNumber]);
+  
+  if ((limitA == LOW) && ((*this).getDirection() == 0)) {
+    brake();
+    resetLimitLow();
+  } else if ((limitB == LOW) && ((*this).getDirection() == 1)) {
+    brake();
+    resetLimitHigh();
+    //SerialUSB.println(rotations);
+  } else {
+    if (speed == 0) {
+      (*this).brake();
+    } else if (speed > 0) {
+      pinMode(RPWM_PINS[motorNumber], OUTPUT);
+      pinMode(LPWM_PINS[motorNumber], PWM);
+      digitalWrite(RPWM_PINS[motorNumber], HIGH);
+      pwmWrite(LPWM_PINS[motorNumber], 65535 - speed);
+    } else {
+      pinMode(RPWM_PINS[motorNumber], PWM);
+      pinMode(LPWM_PINS[motorNumber], OUTPUT);
+      digitalWrite(LPWM_PINS[motorNumber], HIGH);
+      pwmWrite(RPWM_PINS[motorNumber], 65535 + speed);
+    }
   }
 }
 
