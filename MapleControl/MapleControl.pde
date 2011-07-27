@@ -53,21 +53,22 @@ MotorController sternController;
 
 void setup() {
   usbElapsCounter = 0;
-  
+
   bow.init(BOW);
   bowController.init(&bow, GAIN[BOW]);
   pinMode(ROT_PINS[BOW], INPUT);
-  attachInterrupt(ROT_PINS[BOW], countBow, FALLING);
-  
+  attachInterrupt(ROT_PINS[BOW], countBow, CHANGE);
+
   stern.init(STERN);
   sternController.init(&stern, GAIN[STERN]);
   pinMode(ROT_PINS[STERN], INPUT);
   attachInterrupt(ROT_PINS[STERN], countStern, FALLING);
 
   // initialize pins
-  pinMode(EN_PINS[BOW], OUTPUT);
-  pinMode(EN_PINS[STERN], OUTPUT);
-  pinMode(EN_PINS[WINCH], OUTPUT);
+  pinMode(EN_PINS[BOW], INPUT);
+  pinMode(EN_PINS[STERN], INPUT);
+  pinMode(EN_PINS[WINCH], INPUT);
+
   //pinMode(XBEE_TX_PIN, OUTPUT);
   //pinMode(XBEE_RX_PIN, INPUT);
 
@@ -77,34 +78,13 @@ void setup() {
   pinMode(LIMIT_B_PINS[BOW], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[STERN], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[WINCH], INPUT_PULLUP);
-  
-  
-  //attachInterrupt(LIMIT_A_PINS[WINCH], winchResetLow, FALLING);
-  //attachInterrupt(LIMIT_B_PINS[WINCH], winchResetHigh, FALLING);
-
-  // enable the motor drivers
-  digitalWrite(EN_PINS[BOW], HIGH);
-  digitalWrite(EN_PINS[STERN], HIGH);
-  digitalWrite(EN_PINS[WINCH], HIGH);
-
-  // add interrupts for the sensors
-  /*
-  attachInterrupt(ROT_PINS[BOW], countBow, RISING); 
-   attachInterrupt(ROT_PINS[STERN], countStern, RISING);
-   attachInterrupt(ROT_PINS[WINCH], countWinch, RISING);
-   attachInterrupt(LIMIT_A_PINS[BOW], resetBowA, FALLING);
-   attachInterrupt(LIMIT_A_PINS[STERN], resetSternA, FALLING);
-   attachInterrupt(LIMIT_A_PINS[WINCH], resetWinchA, FALLING);
-   attachInterrupt(LIMIT_B_PINS[BOW], resetBowB, FALLING);
-   attachInterrupt(LIMIT_B_PINS[STERN], resetSternB, FALLING);
-   attachInterrupt(LIMIT_B_PINS[WINCH], resetWinchB, FALLING);
-   */
 
   // start the interrupts
   interrupts(); 
 
   Serial1.begin(9600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
+
 
 }
 
@@ -116,8 +96,9 @@ void loop() {
   char data1 = 0x00;
   char data2 = 0x00;
 
-
   time = millis();
+  
+  // bow.calibrate();
 
   // The main control loop executes every 50 ms (CONTROL_LOOP_PERIOD)
   if (((time - lastExecuted) > CONTROL_LOOP_PERIOD) || ((time - lastExecuted) < 0)) {
@@ -125,9 +106,10 @@ void loop() {
     debug = usbActive();
 
     // If we have received new data from the Xbee, use it to update desired position
-    if (receive(&data1, &data2)) {
-      bowController.setTarget(map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[BOW]));
-      sternController.setTarget(MAX_MOTOR_ROTATIONS[STERN] - map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[STERN]));
+    if (receive(&data1, &data2) || true) { //fixmelater
+      bowController.setTarget(getTarget(millis()));
+      sternController.setTarget(getTarget(millis()));
+
       //stern.move(map(data2, 0, 255, -65535, 65535));
       // banana shape
       //desiredRotations[1] = MAX_MOTOR_ROTATIONS[1] - map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[1]);
@@ -137,15 +119,16 @@ void loop() {
     int output = bowController.runLoop();
     int output2 = sternController.runLoop();
 
-    if(debug && (usbElapsCounter >=  usbDebugRate) ) {      
+
+    if(debug && (usbElapsCounter >=  usbDebugRate) ) {
       SerialUSB.println("error\toutput\trot\tdesire");
-      SerialUSB.print(sternController.getError());
+      SerialUSB.print(bowController.getError());
       SerialUSB.print("\t");
-      //SerialUSB.print(output2);
+      SerialUSB.print(output);
       SerialUSB.print('\t');
-      SerialUSB.print(stern.getRotations());
+      SerialUSB.print(bow.getRotations());
       SerialUSB.print('\t');
-      SerialUSB.println(sternController.getTarget());
+      SerialUSB.println(bowController.getTarget());
       usbElapsCounter = 0;
     }
     usbElapsCounter++;
@@ -153,65 +136,48 @@ void loop() {
 }
 
 /** INTERRUPT SERVICE ROUTINES */
-/*void countWinch() {
- winch.count();
-}
- 
- void countStern() {
- stern.count();
-}*/
 
 void countBow() {
-  if (millis() - lastBowCounted > 30) {
-    lastBowCounted = millis();
-    bow.count();
-  }
+    if (millis() - lastBowCounted > 40) {
+      if (digitalRead(ROT_PINS[BOW]) == LOW) {
+        lastBowCounted = millis();
+        bow.count();
+      }
+    }
+  
 }
 
 void countStern() {
-  if (millis() - lastSternCounted > 30) {
-    lastSternCounted = millis();
-    stern.count();
+  if (millis() - lastSternCounted > 20) {
+    if (digitalRead(ROT_PINS[STERN]) == LOW) {
+      lastSternCounted = millis();
+      stern.count();
+    }
   }
 }
 
-/*
-void resetCount(int motor, boolean direction) {
- motorBreak(motor);
- 
- if (direction) {
- motorRotations[motor] = MAX_MOTOR_ROTATIONS[motor];
- } else {
- motorRotations[motor] = 0;
- }
- }
- 
- void resetBowA() {
- resetCount(BOW, false);
- }
- 
- void resetSternA() {
- resetCount(STERN, false);
- }
- 
- void resetWinchA() {
- resetCount(WINCH, false);
- }
- 
- void resetBowB() {
- resetCount(BOW, true);
- }
- 
- void resetSternB() {
- resetCount(STERN, true);
- }
- 
- void resetWinchB() {
- resetCount(WINCH, true);
- }
- 
- void count(int motor)
- {}
- */
+/* TESTING HELPER FUNCTION */
+
+int getTarget(int time) {
+  while (time > 30000) {
+    time -= 30000;
+  }
+
+  if (time < 10000) {
+    return 50;
+  } 
+  else if (time < 15000) {
+    return 111;
+  } 
+  else if (time < 20000) {
+    return 50;
+  } 
+  else if (time < 25000) {
+    return -10;
+  } 
+  else {
+    return 50;
+  }
+}
 
 
