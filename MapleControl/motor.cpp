@@ -1,25 +1,58 @@
+/*
+	Protei — Remote Control and Motor Control
+ Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ 
+ 	This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program (see COPYING).  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "motor.h"
 #include "consts.h"
 #include "WProgram.h"
 
+/* empty constructor */
 Motor::Motor() {
 }
 
+/* helper constructor */
 Motor::Motor(int motor) {
   init(motor);
 }
 
+/* init() takes one argument:
+     int motor -- the motorNumber that the object
+       is commanding */
 void Motor::init(int motor) {
   motorNumber = motor;
   pinMode(EN_PINS[motorNumber], INPUT);
-  rotations = 0;
+  rotations = 50las;
   pinMode(ROT_PINS[motorNumber], INPUT);
 }
 
+/* a helper function for when we are not
+   calibrating the motor */
 int Motor::move(int speed) {
   move(speed, false);
 }
 
+/* move(int speed, int calibrating) is a function
+   for driving the motor at a specified value. it
+   takes two arguments:
+     int speed -- the speed, between -65535 and 65535
+       that we wish to drive the motor
+     int calibrating -- whether or not we are calibrating
+       the motor. 0 (false) if not calibrating, 1 (true)
+       otherwise */
 int Motor::move(int speed, int calibrating) {
   currentSpeed = speed;
  
@@ -47,26 +80,25 @@ int Motor::move(int speed, int calibrating) {
     pinMode(EN_PINS[motorNumber], INPUT);
   }
   
-  if (speed == 0) {
-    (*this).brake();
-  } else if (speed > 0) {
+  if (speed > 1000) {
     pinMode(RPWM_PINS[motorNumber], OUTPUT);
     pinMode(LPWM_PINS[motorNumber], PWM);
     digitalWrite(RPWM_PINS[motorNumber], HIGH);
     pwmWrite(LPWM_PINS[motorNumber], 65535 - speed);
-  } else {
+  } else if (speed < 1000) {
     pinMode(RPWM_PINS[motorNumber], PWM);
     pinMode(LPWM_PINS[motorNumber], OUTPUT);
     digitalWrite(LPWM_PINS[motorNumber], HIGH);
     pwmWrite(RPWM_PINS[motorNumber], 65535 + speed);
+  } else {
+    (*this).brake();
   }
   
   return speed;
-  
 }
 
-
-
+/* brake() commands the motor driver to brake
+   the motor. */
 void Motor::brake() {
   pinMode(RPWM_PINS[motorNumber], OUTPUT);
   pinMode(LPWM_PINS[motorNumber], OUTPUT);

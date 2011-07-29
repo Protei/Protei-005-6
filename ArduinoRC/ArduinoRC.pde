@@ -13,8 +13,14 @@ int sensorValueJSL;
 int outputValueJSL;
 int sensorValueJSR;
 int outputValueJSR;
+int outputValueButtons;
 
 void setup() {
+  pinMode(2, INPUT);
+  digitalWrite(2, HIGH);
+  pinMode(3, INPUT);
+  digitalWrite(3, HIGH);
+  
   Serial.begin(9600); // initialize serial
 }
 
@@ -25,9 +31,17 @@ void loop() {
   sensorValueJSR = analogRead(JOYSTICK_RIGHT_IN); // repeat for right joystick
   outputValueJSR = mapWell(sensorValueJSR, 0, 1012, 0, 255);
   
-  sendBytes(outputValueJSL, outputValueJSR); // transmit the values
+  if (digitalRead(2) == LOW && digitalRead(3) == HIGH) {
+    outputValueButtons = 0;
+  } else if (digitalRead(3) == LOW && digitalRead(2) == HIGH) {
+    outputValueButtons = 255;
+  } else {
+    outputValueButtons = 127;
+  }
   
-  delay(20);
+  sendBytes(outputValueJSL, outputValueJSR, outputValueButtons); // transmit the values
+  
+  delay(100);
 }
   
 // TRANSMITS JOYSTICK VALUES
@@ -38,17 +52,21 @@ void loop() {
 //    - [Hamming encoded Halfbyte1A]
 //    - ...
 //    - 'E' // stop bit
-void sendBytes(char byte1, char byte2) {
+void sendBytes(char byte1, char byte2, char byte3) {
   char halfByte1A = byte1 & B00001111;
   char halfByte1B = (byte1 >> 4) & B00001111;
   char halfByte2A = byte2 & B00001111;
   char halfByte2B = (byte2 >> 4) & B00001111;
+  char halfByte3A = byte3 & B00001111;
+  char halfByte3B = (byte3 >> 4) & B00001111;
   
   Serial.write('S');
   Serial.write(hamming74Encode(halfByte1A));
   Serial.write(hamming74Encode(halfByte1B));
   Serial.write(hamming74Encode(halfByte2A));
   Serial.write(hamming74Encode(halfByte2B));
+  Serial.write(hamming74Encode(halfByte3A));
+  Serial.write(hamming74Encode(halfByte3B));
   Serial.write('E');
   
   return;

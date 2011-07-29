@@ -34,7 +34,7 @@ const int MAX_MOTOR_ROTATIONS[] = {
 
 
 const int GAIN[] = {
-  9000, 9000, 24000}; // the proportional gain
+  9000, 9000, 9000}; // the proportional gain
 
 // PIN DEFINITIONS
 // motor drivers
