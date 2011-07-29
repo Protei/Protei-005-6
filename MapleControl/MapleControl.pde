@@ -1,6 +1,7 @@
 /*
 	Protei — Remote Control and Motor Control
- Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
  
  	This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -43,7 +44,7 @@ int stopwatch;
 int lastBowCounted;
 int lastSternCounted;
 
-int usbElapsCounter;
+int usbElapsCounter = 0;
 
 Motor bow;
 MotorController bowController;
@@ -54,8 +55,6 @@ MotorController sternController;
 Motor winch;
 
 void setup() {
-  usbElapsCounter = 0;
-
   bow.init(BOW);
   bowController.init(&bow, GAIN[BOW]);
   pinMode(ROT_PINS[BOW], INPUT);
@@ -74,23 +73,17 @@ void setup() {
   pinMode(EN_PINS[STERN], INPUT);
   pinMode(EN_PINS[WINCH], INPUT);
 
-  //pinMode(XBEE_TX_PIN, OUTPUT);
-  //pinMode(XBEE_RX_PIN, INPUT);
-
   pinMode(LIMIT_A_PINS[BOW], INPUT_PULLUP);
   pinMode(LIMIT_A_PINS[STERN], INPUT_PULLUP);
   pinMode(LIMIT_A_PINS[WINCH], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[BOW], INPUT_PULLUP);
   pinMode(LIMIT_B_PINS[STERN], INPUT_PULLUP);
-  pinMode(LIMIT_B_PINS[WINCH], INPUT_PULLUP);
 
   // start the interrupts
   interrupts(); 
 
   Serial1.begin(57600); // begin Xbee serial comms
   SerialUSB.begin(); // begin USB serial comms
-
-
 }
 
 /*** THE MAIN LOOP ***
@@ -139,17 +132,17 @@ void loop() {
 /** INTERRUPT SERVICE ROUTINES */
 
 void countBow() {
-    if (millis() - lastBowCounted > 40) {
-      if (digitalRead(ROT_PINS[BOW]) == LOW) {
-        lastBowCounted = millis();
-        bow.count();
-      }
+  if (millis() - lastBowCounted > 40 || millis() - lastBowCounted < 0) { // this essentially "debounces" our rotation sensor
+    if (digitalRead(ROT_PINS[BOW]) == LOW) { // double check
+      lastBowCounted = millis(); // reset the timer
+      bow.count(); // modify the counter accordingly
     }
-  
+  }
 }
 
+/* this is the same as above */
 void countStern() {
-  if (millis() - lastSternCounted > 20) {
+  if (millis() - lastSternCounted > 20 || millis() - lastBowCounted < 0) {
     if (digitalRead(ROT_PINS[STERN]) == LOW) {
       lastSternCounted = millis();
       stern.count();

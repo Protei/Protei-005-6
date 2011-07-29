@@ -1,6 +1,7 @@
 /*
 	Protei — Remote Control and Motor Control
- Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
  
  	This file is part of Protei.
  	
@@ -54,9 +55,13 @@ const int ROT_PINS[] 		= {
 const int LIMIT_A_PINS[] 	= {
   21, 22, 23};
 const int LIMIT_B_PINS[] 	= {
-  28, 37, 36};
+  28, 37}; // the winch does not have a Limit B switch
 
+// the control loop period in ms. 50ms == 20hz
 const int CONTROL_LOOP_PERIOD = 50;
+
+// the period of printing debug info over usb
+// = usbDebugRate * CONTROL_LOOP_PERIOD = 250ms
 const int usbDebugRate = 5;
 
 

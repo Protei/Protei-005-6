@@ -1,6 +1,7 @@
 /*
 	Protei — Remote Control and Motor Control
- Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
  
  	This file is part of Protei.
  	
@@ -27,7 +28,6 @@ char hamming74Decode(char halfByte); // decodes bits. Returns 0xFF in case of er
 boolean usbActive(); // check if USB is active
 
 /* End of prototypes */
-
 
 // this function checks for data to receive. if there is data, it reads it into
 // data1 and data2 (pointers passed from the main loop).

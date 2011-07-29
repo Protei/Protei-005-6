@@ -1,6 +1,7 @@
 /*
 	Protei — Remote Control and Motor Control
- Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
  
  	This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -107,10 +108,14 @@ void Motor::brake() {
   currentSpeed = 0;
 }
 
+/* return the current speed */
 int Motor::getSpeed() {
   return currentSpeed;
 }
 
+/* by checking the current output speed, this returns
+   1 if moving in a positive direction (towards limit B)
+   and 0 otherwise */
 int Motor::getDirection() {
   if (currentSpeed >= 0) {
     return 1;
@@ -120,19 +125,25 @@ int Motor::getDirection() {
   }
 }
 
+/* return the current number of rotations */
 int Motor::getRotations() {
   return rotations;
 }
 
+/* reset the current number of rotations to minimum */
 int Motor::resetLimitLow() {
   rotations = 0;
   return 0;
 }
 
+/* reset the current number of rotations to maximum */
 int Motor::resetLimitHigh() {
   rotations = MAX_MOTOR_ROTATIONS[motorNumber];
+  return rotations;
 }
 
+/* count() increments or decrements the rotation counter
+   depending on the direction the motor is spinning */
 void Motor::count() {
   if (getDirection() == 1) {
     rotations++;
@@ -142,6 +153,10 @@ void Motor::count() {
   }
 }
 
+/* calibrate() tests the linear actuators by moving
+   the actuator from one end of its range to the other
+   at both low speeds and high speeds, measuring the
+   total rotations that the counter counts. */
 int Motor::calibrate() {
   int totalRotations = 0;
   
@@ -167,6 +182,5 @@ int Motor::calibrate() {
   totalRotations -= rotations;
   
   return (totalRotations/4);
-  
 }
 
