@@ -1,9 +1,22 @@
-/* Arduino/Xbee RC Control
-   Gabriella Levine and Logan Williams
-   Protei
-   6/29/2011
-*/
-
+/*
+	Protei — Remote Control and Motor Control
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
+ 
+ 	This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program (see COPYING).  If not, see <http://www.gnu.org/licenses/>.
+ */
+ 
 // system constants
 const int JOYSTICK_LEFT_IN = 0;
 const int JOYSTICK_RIGHT_IN = 1;
