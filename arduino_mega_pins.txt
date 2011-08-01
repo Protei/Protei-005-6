@@ -1,0 +1,25 @@
+MOTOR DRIVER 1
+ENA - 42
+ENB - 44
+RPWMA - 4
+RPWMB - 5
+LPWMA - 6
+LPWMB - 7
+
+MOTOR DRIVER 2
+ENA - 36
+RPWMA - 8
+LPWMA - 9
+
+XBEE
+pin 18/19 (Serial 1)
+
+MOTOR SENSORS
+ROT1 - 2 (interrupt 0)
+ROT2 - 3 (interrupt 1)
+L2B - 48
+L2A - 46
+L1B - 40
+L1A - 38
+ROTWINCH - 21 (interrupt 2)
+LIMITWINCH - 50
