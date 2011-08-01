@@ -24,8 +24,8 @@
 
 // EXECUTION VARIABLES
 boolean debug = false;
-unsigned long lastExecuted;
-unsigned long time;
+unsigned long lastExecuted; // this variable keeps
+unsigned long time; // this is a variable for the current time
 
 volatile int motorRotations[3];
 int desiredRotations[3];
@@ -90,7 +90,6 @@ void setup() {
  * The loop body executes every 50ms, for a 20Hz control loop. This is kept in time with millis().
  */
 void loop() {
-
   char data1 = 0x00;
   char data2 = 0x00;
   char data3 = 0x00;

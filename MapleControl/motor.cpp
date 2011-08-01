@@ -36,7 +36,7 @@ Motor::Motor(int motor) {
 void Motor::init(int motor) {
   motorNumber = motor;
   pinMode(EN_PINS[motorNumber], INPUT);
-  rotations = 50las;
+  rotations = 50;
   pinMode(ROT_PINS[motorNumber], INPUT);
 }
 

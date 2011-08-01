@@ -23,6 +23,8 @@
 
 /* Function prototypes */
 
+#include "WProgram.h"
+
 boolean receive(char *data1, char *data2, char *data3); // checks for data and reads it into data1 and data2
 char hamming74Decode(char halfByte); // decodes bits. Returns 0xFF in case of error.
 boolean usbActive(); // check if USB is active
@@ -34,6 +36,7 @@ boolean usbActive(); // check if USB is active
 // returns true if data read successfully, false otherwise
 
 boolean receive(char *data1, char *data2, char *data3) {
+  boolean debug = usbActive();
   char byteRead;
   char halfByte1A;
   char halfByte1B;
