@@ -41,9 +41,9 @@ const int GAIN[] = {
 const int EN_PINS[] 	= {
   42, 44, 36};
 const int RPWM_PINS[] 	= {
-  5, 7, 8};
+  5, 4, 8};
 const int LPWM_PINS[] 	= {
-  6, 4, 9};
+  6, 7, 9};
 // xbee
 
 const int XBEE_TX_PIN = 18;
