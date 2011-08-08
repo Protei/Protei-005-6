@@ -1,6 +1,7 @@
 /*
 	Protei — Remote Control and Motor Control
- Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
  
  	This file is part of Protei.
  	
@@ -20,66 +21,49 @@
 
 /** CONSTANT DEFINITIONS */
 
+// Motors are indexed as follow :
+//  0 - bow articulation motor
+//  1 - stern articulation motor
+//  2 - sail whinch motor
+#define   BOW   0
+#define   STERN 1
+#define   WINCH 2
+
 // this needs to be measured and set manually
 const int MAX_MOTOR_ROTATIONS[] = {
-  100, 100, 100};
-
-int dir = 1;
+  101, 103, 100};
 
 const int GAIN[] = {
-  8000, 8000, 8000}; // the proportional gain
+  35, 35, 35}; // the proportional gain
 
-long ruptTimer = 0;
-
+// PIN DEFINITIONS
+// motor drivers
 const int EN_PINS[] 	= {
-  4, 5, 6};
+  42, 44, 36};
 const int RPWM_PINS[] 	= {
-  0, 2, 11};
+  5, 4, 8};
 const int LPWM_PINS[] 	= {
-  1, 3, 12};
+  6, 7, 9};
+// xbee
+
+const int XBEE_TX_PIN = 18;
+const int XBEE_RX_PIN = 19;
+
+// motor feedback interrupt pins
+const int ROT_PINS[] 		= {
+  2, 3, 21};
+const int ROT_INTS[] = {
+  0, 1, 2};
 const int LIMIT_A_PINS[] 	= {
-  21, 22, 23};
+  38, 46, 50};
 const int LIMIT_B_PINS[] 	= {
-  28, 37, 36};
+  40, 48}; // the winch does not have a Limit B switch
 
-int l;
-int h;
-void setup() {
+// the control loop period in ms. 50ms == 20hz
+const int CONTROL_LOOP_PERIOD = 50;
 
-    pinMode(21, INPUT_PULLUP);
-    pinMode(28, INPUT_PULLUP);
-  SerialUSB.begin();
-  
-  
-}
+// the period of printing debug info over usb
+// = usbDebugRate * CONTROL_LOOP_PERIOD = 250ms
+const int usbDebugRate = 5;
 
-void loop() {
-    if (dir == 0) {
-      pinMode(LPWM_PINS[0], OUTPUT);
-      pinMode(RPWM_PINS[0], PWM);
-      digitalWrite(LPWM_PINS[0], HIGH);
-      pwmWrite(RPWM_PINS[0], 65535 - 65535);
-    } else {
-      pinMode(RPWM_PINS[0], OUTPUT);
-      pinMode(LPWM_PINS[0], PWM);
-      digitalWrite(RPWM_PINS[0], HIGH);
-      pwmWrite(LPWM_PINS[0], 65535 - 65535);
-    }
-    
-    //SerialUSB.println(digitalRead(21));
-    //SerialUSB.print(".");
-    
-    l = digitalRead(21);
-    h = digitalRead(28);
-    
-    if (l == 0) {
-      dir = 1;
-    }
-    
-    if (h == 0) {
-      dir = 0;
-    }
-
-    
-delay(20);
-}
+const int debug = true;

@@ -1,6 +1,7 @@
 /*
 	Protei — Remote Control and Motor Control
- Copyright (C) 2011  Logan Williams, Gabriella Levine, Qiuyang Zhou
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
  
  	This file is part of Protei.
  	
@@ -22,69 +23,100 @@
 
 /* Function prototypes */
 
-boolean receive(char *data1, char *data2); // checks for data and reads it into data1 and data2
+#include "WProgram.h"
+
+boolean receive(unsigned char *data1, unsigned char *data2, unsigned char *data3); // checks for data and reads it into data1 and data2
 char hamming74Decode(char halfByte); // decodes bits. Returns 0xFF in case of error.
-boolean usbActive(); // check if USB is active
 
 /* End of prototypes */
-
 
 // this function checks for data to receive. if there is data, it reads it into
 // data1 and data2 (pointers passed from the main loop).
 // returns true if data read successfully, false otherwise
 
-boolean receive(char *data1, char *data2) {
-  char byteRead;
-  char halfByte1A;
-  char halfByte1B;
-  char halfByte2A;
-  char halfByte2B;
-
-  if (Serial1.available() >  5) {
-    byteRead = Serial1.read();
-    SerialUSB.println((int) byteRead);
-
-    if (byteRead == 'S') { // start byte recieved
-      halfByte1A = Serial1.read();
-      halfByte1B = Serial1.read();
-      halfByte2A = Serial1.read();
-      halfByte2B = Serial1.read();
-      byteRead = Serial1.read();
+boolean receive(unsigned char *data1, unsigned char *data2, unsigned char *data3) {
+  unsigned char byteRead;
+  unsigned char halfByte1A;
+  unsigned char halfByte1B;
+  unsigned char halfByte2A;
+  unsigned char halfByte2B;
+  unsigned char halfByte3A;
+  unsigned char halfByte3B;
+  unsigned char buffer[128];
+  int i = 0;
+  int start;
+  int avail = Serial1.available();
+  
+  if (avail > 7) {
+    if (debug > 5) {
+      Serial.print("Read into buffer: ");
     }
-  }
-
-  if (byteRead == 'E') { // end byte recieved
-    if (debug) { 
-      SerialUSB.println("Recieved a complete packet. Data:"); 
-    }
-    halfByte1A = hamming74Decode(halfByte1A);
-    halfByte1B = hamming74Decode(halfByte1B);
-    halfByte2A = hamming74Decode(halfByte2A);
-    halfByte2B = hamming74Decode(halfByte2B);
-
-    if (halfByte1A == 0xFF || halfByte2A == 0xFF || halfByte1B == 0xFF || halfByte2B == 0xFF) {
-      // multiple bit errors, recovery impossible
-      if (debug) { 
-        SerialUSB.println("Multiple bit errors. Recovery impossible."); 
+    for (i = 0; (i < avail) && (i < 128); i++) {
+      buffer[i] = Serial1.read();
+      if (debug > 5) {
+        Serial.write(buffer[i]);
       }
-
+    }
+    if (debug > 5) {
+      Serial.println();
+    }
+  
+    for (int j = 0; j < i; j++) {
+      if (buffer[j] == 'S') {
+        start = j;
+      }
+    }
+    
+    if (start+7 <= i) {
+      halfByte1A = buffer[start+1];
+      halfByte1B = buffer[start+2];
+      halfByte2A = buffer[start+3];
+      halfByte2B = buffer[start+4];
+      halfByte3A = buffer[start+5];
+      halfByte3B = buffer[start+6];
+      byteRead = buffer[start+7];
+          
+      if (byteRead == 'E') { // end byte recieved successfully
+        Serial1.flush();
+        if (false) { 
+          Serial.println("Recieved a complete packet. Data:"); 
+        }
+        halfByte1A = hamming74Decode(halfByte1A);
+        halfByte1B = hamming74Decode(halfByte1B);
+        halfByte2A = hamming74Decode(halfByte2A);
+        halfByte2B = hamming74Decode(halfByte2B);
+        halfByte3A = hamming74Decode(halfByte3A);
+        halfByte3B = hamming74Decode(halfByte3B);
+      
+        if (halfByte1A == 0xFF || halfByte2A == 0xFF || halfByte1B == 0xFF || halfByte2B == 0xFF || halfByte3A == 0xFF || halfByte3B == 0xFF) {
+          // multiple bit errors, recovery impossible
+          if (debug) { 
+            Serial.println("Multiple bit errors. Recovery impossible."); 
+          }
+      
+          return false;
+        } 
+        else {
+          *data1 = (halfByte1A & B00001111) + ((halfByte1B << 4) & B11110000);
+          *data2 = (halfByte2A & B00001111) + ((halfByte2B << 4) & B11110000);
+          *data3 = (halfByte3A & B00001111) + ((halfByte3B << 4) & B11110000);
+      
+          if (false) {
+            Serial.print("Data1: ");   
+            Serial.println(((int) *data1));
+            Serial.print("Data2: ");
+            Serial.println(((int) *data2));
+            Serial.print("Data3: ");
+            Serial.println(((int) *data3));
+          }
+      
+          return true;      
+        }
+      }
+    } else {
       return false;
-    } 
-    else {
-      *data1 = (halfByte1A & B00001111) + ((halfByte1B << 4) & B11110000);
-      *data2 = (halfByte2A & B00001111) + ((halfByte2B << 4) & B11110000);
-
-      if (debug) {
-        SerialUSB.print("Data1: ");   
-        SerialUSB.println(((int) *data1));
-        SerialUSB.print("Data2: ");
-        SerialUSB.println(((int) *data2));
-      }
-
-      return true;      
     }
-  } 
-  else {
+  } else {
     return false;
   }
 }
@@ -154,8 +186,3 @@ char hamming74Decode(char halfByte) {
 
   return correctedHalfByte;
 }
-
-boolean usbActive() {
-  return (SerialUSB.isConnected() && (SerialUSB.getDTR() || SerialUSB.getRTS()));
-}
-

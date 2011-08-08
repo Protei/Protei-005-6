@@ -1,9 +1,22 @@
-/* Arduino/Xbee RC Control
-   Gabriella Levine and Logan Williams
-   Protei
-   6/29/2011
-*/
-
+/*
+	Protei — Remote Control and Motor Control
+ Copyright (C) 2011  Logan Williams, Gabriella Levine,
+                     Qiuyang Zhou, Francois de la Taste
+ 
+ 	This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program (see COPYING).  If not, see <http://www.gnu.org/licenses/>.
+ */
+ 
 // system constants
 const int JOYSTICK_LEFT_IN = 0;
 const int JOYSTICK_RIGHT_IN = 1;
@@ -13,9 +26,15 @@ int sensorValueJSL;
 int outputValueJSL;
 int sensorValueJSR;
 int outputValueJSR;
+int outputValueButtons;
 
 void setup() {
-  Serial.begin(57600); // initialize serial
+  pinMode(2, INPUT);
+  digitalWrite(2, HIGH);
+  pinMode(3, INPUT);
+  digitalWrite(3, HIGH);
+  
+  Serial.begin(9600); // initialize serial
 }
 
 void loop() {
@@ -25,9 +44,17 @@ void loop() {
   sensorValueJSR = analogRead(JOYSTICK_RIGHT_IN); // repeat for right joystick
   outputValueJSR = mapWell(sensorValueJSR, 0, 1012, 0, 255);
   
-  sendBytes(outputValueJSL, outputValueJSR); // transmit the values
+  if (digitalRead(2) == LOW && digitalRead(3) == HIGH) {
+    outputValueButtons = 0;
+  } else if (digitalRead(3) == LOW && digitalRead(2) == HIGH) {
+    outputValueButtons = 255;
+  } else {
+    outputValueButtons = 127;
+  }
   
-  delay(50);
+  sendBytes(outputValueJSL, outputValueJSR, outputValueButtons); // transmit the values
+  
+  delay(100);
 }
   
 // TRANSMITS JOYSTICK VALUES
@@ -38,17 +65,21 @@ void loop() {
 //    - [Hamming encoded Halfbyte1A]
 //    - ...
 //    - 'E' // stop bit
-void sendBytes(char byte1, char byte2) {
+void sendBytes(char byte1, char byte2, char byte3) {
   char halfByte1A = byte1 & B00001111;
   char halfByte1B = (byte1 >> 4) & B00001111;
   char halfByte2A = byte2 & B00001111;
   char halfByte2B = (byte2 >> 4) & B00001111;
+  char halfByte3A = byte3 & B00001111;
+  char halfByte3B = (byte3 >> 4) & B00001111;
   
   Serial.write('S');
   Serial.write(hamming74Encode(halfByte1A));
   Serial.write(hamming74Encode(halfByte1B));
   Serial.write(hamming74Encode(halfByte2A));
   Serial.write(hamming74Encode(halfByte2B));
+  Serial.write(hamming74Encode(halfByte3A));
+  Serial.write(hamming74Encode(halfByte3B));
   Serial.write('E');
   
   return;
