@@ -34,6 +34,7 @@ void MotorController::init(Motor*  theMotor, int theGain) {
   gain = theGain;
   motor = theMotor;
   targetPosition = (*theMotor).getRotations();
+  avg = 0;
 }
 
 /* runLoop() compares the current rotations of the motor against
@@ -41,11 +42,14 @@ void MotorController::init(Motor*  theMotor, int theGain) {
 int MotorController::runLoop() {
   int output;
   int error = targetPosition - (*motor).getRotations();
+  int rotations = (*motor).getRotations();
 
   if (abs(error) < 3) { // close enough
     output = 0;
   } 
   else {
+    lastRotations = rotations;
+    
     output = gain * error;
     if (output > 255) { // limit the output
       output = 255;
@@ -54,6 +58,36 @@ int MotorController::runLoop() {
       output = -255;
     }
   }
+  
+  if (rotations == lastRotations && output > 100) {
+    if (consecutive <= 4) {
+      consecutive++;
+    }
+  } else {
+    consecutive = 0;
+  }
+  
+  if (rotations == lastRotations && output < -100) {
+    if (consecutive >= -4) {
+      consecutive--;
+    }
+  } else {
+    consecutive = 0;
+  }
+  
+  if (rotations != lastRotations) {
+    consecutive = 0;
+  }
+  
+  lastRotations = rotations;
+  
+  if ((abs(consecutive) > 4)) {
+    output = 0;
+    //setTarget(rotations);
+    Serial.println("stalling!!");
+  }
+  
+  avg = (avg + output) / 2;
 
   (*motor).move(output);
   return(output);
@@ -74,3 +108,15 @@ int MotorController::getError() {
 int MotorController::getTarget() {
   return targetPosition;
 }
+
+void MotorController::printDebug() {
+  Serial.println("Rots\tTarget\tError\tOutput");
+  Serial.print((*motor).getRotations());
+  Serial.print("\t");
+  Serial.print(targetPosition);
+  Serial.print("\t");
+  Serial.print(getError());
+  Serial.print("\t");
+  Serial.println((*motor).getSpeed());
+}
+  

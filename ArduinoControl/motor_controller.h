@@ -30,9 +30,13 @@ public:
   void setTarget(int newTarget);
   int getError();
   int getTarget();
+  void printDebug();
 private:
   int gain; // the proportional gain
   Motor* motor; // a reference to the motor that is controlled
   int targetPosition; // the desired motor rotations
+  int lastRotations;
+  int consecutive;
+  int avg;
 };
 

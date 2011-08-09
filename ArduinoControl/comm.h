@@ -78,7 +78,7 @@ boolean receive(unsigned char *data1, unsigned char *data2, unsigned char *data3
           
       if (byteRead == 'E') { // end byte recieved successfully
         Serial1.flush();
-        if (false) { 
+        if (debug) { 
           Serial.println("Recieved a complete packet. Data:"); 
         }
         halfByte1A = hamming74Decode(halfByte1A);
@@ -101,7 +101,7 @@ boolean receive(unsigned char *data1, unsigned char *data2, unsigned char *data3
           *data2 = (halfByte2A & B00001111) + ((halfByte2B << 4) & B11110000);
           *data3 = (halfByte3A & B00001111) + ((halfByte3B << 4) & B11110000);
       
-          if (false) {
+          if (debug) {
             Serial.print("Data1: ");   
             Serial.println(((int) *data1));
             Serial.print("Data2: ");

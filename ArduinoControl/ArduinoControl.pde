@@ -111,18 +111,12 @@ void loop() {
 
     int output = bowController.runLoop();
     int output2 = sternController.runLoop();
-    Serial.println(digitalRead(LIMIT_A_PINS[STERN]));
 
     if(debug && (usbElapsCounter >=  usbDebugRate) ) {
-      Serial.println("error\toutput\trot\tdesire");
-      Serial.print(sternController.getError());
-      Serial.print("\t");
-      Serial.print(stern.getSpeed());
-      Serial.print('\t');
-      Serial.print(stern.getRotations());
-      Serial.print('\t');
-      Serial.println(sternController.getTarget());
-      usbElapsCounter = 0;
+      Serial.println("BOW DEBUG DATA");
+      bowController.printDebug();
+      Serial.println("STERN DEBUG DATA");
+      sternController.printDebug();
     }
     usbElapsCounter++;
   }
