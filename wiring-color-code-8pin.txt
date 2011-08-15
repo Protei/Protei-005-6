@@ -1,0 +1,12 @@
+WIRING COLOR CODE : KEEL <-> CONTROL BOX
+
+COLOR		NAME		EXPLANATION
+
+Gray		L1A			Limit Switch A 	for motor 1
+White		L1B			Limit Switch B 	for motor 1
+Brown		L2A			Limit Switch A 	for motor 2
+Green		L2B			Limit Switch B 	for motor 2
+Yellow		ROT1		Rotation Sensor for motor 1
+Blue		ROT2		Rotation Sensor for motor 2
+Black		GND			Ground
+Red			VCC			Power Supply +5V
