@@ -1,0 +1,544 @@
+#LyX 1.6.9 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Protei Version 6
+\end_layout
+
+\begin_layout Section
+System Overview
+\end_layout
+
+\begin_layout Subsection
+Motivations/Metrics
+\end_layout
+
+\begin_layout Subsection
+Functionality
+\end_layout
+
+\begin_layout Section
+Mechanical Design
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Subsection
+Hull structure
+\end_layout
+
+\begin_layout Subsubsection
+Slices
+\end_layout
+
+\begin_layout Subsubsection
+Ribs
+\end_layout
+
+\begin_layout Subsubsection
+Cables
+\end_layout
+
+\begin_layout Subsection
+Keel structure
+\end_layout
+
+\begin_layout Subsection
+Sail structure
+\end_layout
+
+\begin_layout Subsubsection
+Mast
+\end_layout
+
+\begin_layout Subsubsection
+Boom 
+\end_layout
+
+\begin_layout Section
+Electrical Design
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Subsection
+Actuation system
+\end_layout
+
+\begin_layout Standard
+The linear actuators on Protei provide the pulling force necessary to bend
+ the boat.
+ They consist of a medium-strength DC brushed motor, geared down [ ]X, driving
+ a worm drive mechanism to move a carriage horizontally.
+ The entire system is designed to be mounted inside 63mm PVC piping, so
+ it can be easily made completely watertight.
+\end_layout
+
+\begin_layout Standard
+[image of actuator system, outside of the tube]
+\end_layout
+
+\begin_layout Standard
+Electrically, there are two separate mechanisms — the driving mechanism,
+ and the sensing mechanism.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Driving
+\end_layout
+
+\begin_layout Standard
+The motor is driven through an H-Bridge motor driver, purchased from Elechouse.
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.elechouse.com/elechouse/index.php?main_page=product_info&products_id=667
+\end_layout
+
+\end_inset
+
+ The manufacturer claims that it will work with 12V motors at 50A continuous
+ and 100A peak current.
+ We have not thoroughly tested these claims.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename motordriver.png
+	width 75col%
+	rotateAngle -90
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\emph on
+The motor driver boards used to drive both linear actuators and sail winch.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As shown above, each channel has six logic inputs —
+\begin_inset space \thinspace{}
+\end_inset
+
+VCC, GND, EN, RPWM, LPWM, and DIS.
+ DIS is always left unconnected.
+ VCC is connected to +5V, GND to the GND of the microcontroller, and RPWM
+ and LPWM are connected to two PWM capable output pins from the microcontroller.
+ EN is connected as described below in the sensing section.
+ 12V straight from the main battery is connected to the POWER header on
+ the opposite side.
+ Each motor is connected to the controller in series with a 60A circuit
+ breaker to prevent the motor from damaging the motor driver.
+\end_layout
+
+\begin_layout Subsubsection
+Sensing
+\end_layout
+
+\begin_layout Standard
+Sensing is accomplished through two limit switches, on either end of the
+ actuator’s linear range, and a Hall Effect sensor, which detects the rotation
+ of a magnet attached to the motor’s shaft.
+ A schematic of the sensing mechanism is shown below.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename ../Actuator/actuator.png
+	width 100col%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\emph on
+Schematic of sensors on each linear actuator.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The most complicated part of the above schematic is the limit switch function.
+ The limit switches have two functions: the microcontroller can detect the
+ state of each limit switch individually; and, if either switch is depressed,
+ the motor driver will be disabled, until the microcontroller re-enables
+ it.
+ This is implemented through use of the tri-state logic capability of the
+ microcontroller digital I/O.
+ When the EN_IO pin is set to high impedance (input) mode, the value of
+ the motor driver enable pin is entirely set by the state of the switches.
+ When one of the switches is toggled, the enable pin goes low, and can be
+ reasserted high by changing EN_IO to output mode.
+ In this way, the actuator is protected against software failure, and does
+ not solely rely on the microcontroller for detecting switch presses.
+ Obviously this only works if the default state of EN_IO is high impedance.
+\end_layout
+
+\begin_layout Standard
+The rotary sensor uses an Allegro A3141 hall effect sensor to detect the
+ presence of a magnet on the motor shaft.
+ R4 serves as a pullup resistor and R5/C1 is a lowpass filter.
+ The output is briefly set low once per revolution, as the magnet passes
+ the sensor.
+ This can be read with a digital input on the microcontroller.
+\end_layout
+
+\begin_layout Subsection
+Communication system
+\end_layout
+
+\begin_layout Standard
+The communication system uses two Xbee Pro 900 Series 1 devices for short
+ range (
+\begin_inset Formula $\sim$
+\end_inset
+
+1000m) bidirectional radio communication.
+ These communicate using the following simple protocol.
+ First, the transmitter sends 8 bytes to the reciever.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+`S'
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+[halfByte1A]
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+[halfByte1B]
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+[halfByte2A]
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+[halfByte2B]
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+[halfByte3A]
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+[halfByte3B]
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+`E'
+\end_layout
+
+\begin_layout Standard
+The reciever responds by sending a single 
+\family typewriter
+`U'
+\family default
+ to confirm that the message was recieved s
+\emph on
+U
+\emph default
+ccesfully.
+\end_layout
+
+\begin_layout Standard
+The transmitter sends a total of three bytes (the analog values of the two
+ control sticks, and the state of the buttons) in each exchange.
+ Prior to transmission each byte is split into 4-bit blocks, which are then
+ encoded using a Hamming7,4 code to ensure reliable data transmission.
+ An overall parity bit is used as the 8th bit for each 
+\begin_inset Quotes eld
+\end_inset
+
+halfByte.
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Microcontroller and connection shield
+\end_layout
+
+\begin_layout Standard
+The primary microcontroller on Protei is the Arduino Mega 2560.
+ We designed and built a custom connection shield for the Arduino to contain
+ some of the components indicated in section 3.2.2, as well as to make connections
+ easier between the motors and the Arduino.
+ A schematic of the layout for this shield is shown below.
+ Red indicates connections directly along the surface of the protoboard,
+ and other colors indicate connections made using wires attached to the
+ protoboard.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /Users/loganw/Documents/Protei/Protei-005-6/ControlSchematic/MegaShield.png
+	width 100col%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\emph on
+A layout schematic for the connections on the Arduino Mega shield.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+
+\emph on
+An image of the completed Mega shield board.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Control firmware
+\end_layout
+
+\begin_layout Standard
+The control process will be summarized below, but for full details, one
+ should examine the source code and its comments directly.
+ The control firmware is based around a 20 Hz (period of 50 ms) control
+ loop.
+ Each loop cycle, the following tasks are performed:
+\end_layout
+
+\begin_layout Enumerate
+Read and process any data the Xbee has recieved.
+\end_layout
+
+\begin_layout Enumerate
+Each MotorController object runs their main loop:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Calculate the power output necessary for the closed loop actuators.
+\end_layout
+
+\begin_layout Enumerate
+Send the correct power levels to the two motor driver channels.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Send the winch motor power level.
+\end_layout
+
+\begin_layout Enumerate
+If necessary, print any debug information.
+\end_layout
+
+\begin_layout Standard
+There are two important C++ classes used in the control software.
+ The Motor class has references to the 3 pins necessary for motor control,
+ as described above, and to the three necessary input pins (Limit A, Limit
+ B, and the rotation sensor).
+ Through an interrupt (which must, due to the limitations of the Arduino
+ environment, be set up outside of the class), a Motor object can keep track
+ of the number of rotations that it has turned.
+ The move function has some extra logic besides sending the correct PWM
+ values — it also makes sure that the motor comes to a stop before reversing
+ direction (to avoid miscounting rotations), prevents the motor from stopping
+ while the rotation sensor is active (can cause rotation miscounts), prevents
+ very small values from being sent to the motor (to save power), prevents
+ the motor from moving against the limit sensor, and can reassert the Motor
+ driver enable pins after a limit sensor is depressed.
+\end_layout
+
+\begin_layout Standard
+A MotorController class takes a target number of rotations, and a Motor
+ object, and calculates the power level that should be sent to the motor.
+ This logic is somewhat nonlinear.
+ If the error (target rotations - current rotations) is less than 2, the
+ motor is told to brake.
+ Otherwise, the motor is told to move at 
+\begin_inset Formula $K\cdot error$
+\end_inset
+
+, where K is the gain of the object.
+\end_layout
+
+\begin_layout Section
+Future Developments
+\end_layout
+
+\begin_layout Paragraph*
+Towards energy autonomy
+\end_layout
+
+\begin_layout Paragraph*
+Towards sensing and decision-making
+\end_layout
+
+\begin_layout Paragraph*
+Towards centralised swarm control
+\end_layout
+
+\begin_layout Paragraph*
+Towards decentralised swarm control
+\end_layout
+
+\begin_layout Paragraph*
+Applications beyond oil spills
+\end_layout
+
+\end_body
+\end_document

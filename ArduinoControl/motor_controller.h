@@ -37,6 +37,7 @@ private:
   int targetPosition; // the desired motor rotations
   int lastRotations;
   int consecutive;
-  int avg;
+  int tmpMax;
+  int tmpMin;
 };
 

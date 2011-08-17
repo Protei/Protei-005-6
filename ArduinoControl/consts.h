@@ -31,10 +31,10 @@
 
 // this needs to be measured and set manually
 const int MAX_MOTOR_ROTATIONS[] = {
-  108, 103, 100};
+  101, 103, 100};
 
 const int GAIN[] = {
-  35, 35, 35}; // the proportional gain
+  70, 70, 35}; // the proportional gain
 
 // PIN DEFINITIONS
 // motor drivers
@@ -64,6 +64,8 @@ const int CONTROL_LOOP_PERIOD = 50;
 
 // the period of printing debug info over usb
 // = usbDebugRate * CONTROL_LOOP_PERIOD = 250ms
-const int usbDebugRate = 5;
+const int usbDebugRate = 20;
 
-const int debug = true;
+// the current debug level (higher numbers mean
+// that more information is printed)
+const int debug = 6;

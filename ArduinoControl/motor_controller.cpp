@@ -34,7 +34,6 @@ void MotorController::init(Motor*  theMotor, int theGain) {
   gain = theGain;
   motor = theMotor;
   targetPosition = (*theMotor).getRotations();
-  avg = 0;
 }
 
 /* runLoop() compares the current rotations of the motor against
@@ -44,7 +43,7 @@ int MotorController::runLoop() {
   int error = targetPosition - (*motor).getRotations();
   int rotations = (*motor).getRotations();
 
-  if (abs(error) < 3) { // close enough
+  if (abs(error) < 2) { // close enough
     output = 0;
   } 
   else {
@@ -53,41 +52,42 @@ int MotorController::runLoop() {
     output = gain * error;
     if (output > 255) { // limit the output
       output = 255;
-    } 
-    else if (output < -255) {
+    } else if (output < -255) {
       output = -255;
     }
   }
   
-  if (rotations == lastRotations && output > 100) {
-    if (consecutive <= 4) {
+  if (rotations == lastRotations) {
+    if ((*motor).getDirection() != 0) {
       consecutive++;
     }
   } else {
     consecutive = 0;
   }
   
-  if (rotations == lastRotations && output < -100) {
-    if (consecutive >= -4) {
-      consecutive--;
+  if (consecutive > 5) {
+    if ((*motor).getDirection() == 1) {
+      tmpMax = rotations;
+    } else if ((*motor).getDirection() == -1) {
+      tmpMin = rotations;
     }
+  }
+  
+  if (rotations < (tmpMax - 5)) {
+    tmpMax = 200;
   } else {
-    consecutive = 0;
+    if (output > 0) {
+      output = 0;
+    }
   }
   
-  if (rotations != lastRotations) {
-    consecutive = 0;
+  if (rotations > (tmpMin + 5)) {
+    tmpMin = -100;
+  } else {
+    if (output < 0) {
+      output = 0;
+    }
   }
-  
-  lastRotations = rotations;
-  
-  if ((abs(consecutive) > 4)) {
-    output = 0;
-    //setTarget(rotations);
-    Serial.println("stalling!!");
-  }
-  
-  avg = (avg + output) / 2;
 
   (*motor).move(output);
   return(output);
@@ -109,6 +109,8 @@ int MotorController::getTarget() {
   return targetPosition;
 }
 
+/* print debug information to the USB output */
+/* this function should only be called if debug is true */
 void MotorController::printDebug() {
   Serial.println("Rots\tTarget\tError\tOutput");
   Serial.print((*motor).getRotations());

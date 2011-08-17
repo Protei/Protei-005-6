@@ -38,9 +38,11 @@ public:
   int resetLimitHigh();
   void count();
   int calibrate();
+  int getCntFlag();
 private:
   int motorNumber; // the motor number (0=BOW, 1=STERN, 2=WINCH)
   int currentSpeed; // the current motor speed (output)
   int rotations; // the current # of rotations
+  int cntFlag;
 };
 

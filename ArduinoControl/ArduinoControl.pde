@@ -31,10 +31,10 @@ unsigned long time; // this is a variable for the current time
 int motorNumber;
 int stopwatch;
 
-int lastBowCounted;
-int lastSternCounted;
+unsigned long lastBowCounted;
+unsigned long lastSternCounted;
 
-int usbElapsCounter = 0;
+unsigned long usbElapsCounter = 0;
 
 Motor bow;
 MotorController bowController;
@@ -48,7 +48,7 @@ void setup() {
   bow.init(BOW);
   bowController.init(&bow, GAIN[BOW]);
   pinMode(ROT_PINS[BOW], INPUT);
-  attachInterrupt(ROT_INTS[BOW], countBow, CHANGE);
+  attachInterrupt(ROT_INTS[BOW], countBow, FALLING); //was set to CHANGE... it shouldn't make a difference (but you never know)
 
   stern.init(STERN);
   sternController.init(&stern, GAIN[STERN]);
@@ -101,16 +101,22 @@ void loop() {
   // The main control loop executes every 50 ms (CONTROL_LOOP_PERIOD)
   if (((time - lastExecuted) > CONTROL_LOOP_PERIOD) || ((time - lastExecuted) < 0)) {
     lastExecuted = time; // update our time watch
-
+    
     // If we have received new data from the Xbee, use it to update desired position
     if (receive(&data1, &data2, &data3)) { //fixmelater
-      bowController.setTarget(map(data1, 0, 255, -10, MAX_MOTOR_ROTATIONS[0] + 10));
-      sternController.setTarget(map(data2, 0, 255, -10, MAX_MOTOR_ROTATIONS[1] + 10));
+      sendStatus(bow.getCntFlag(), stern.getCntFlag());
+      //bowController.setTarget(map(data1, 0, 255, 0, MAX_MOTOR_ROTATIONS[BOW]));
+      // testing two different control strategies:
+      //  - closed loop position control (stern)
+      //  - open loop speed control (bow)
+      bow.move(map(data1, 0, 255, -255, 255));
+      //stern.move(map(data2, 0, 255, -255, 255));
+      //sternController.setTarget(map(data2, 0, 255, 0, MAX_MOTOR_ROTATIONS[STERN]));
       winch.move(map(data3, 0, 255, -255, 255));
     }
 
-    int output = bowController.runLoop();
-    int output2 = sternController.runLoop();
+    //int output = bowController.runLoop();
+    //int output2 = sternController.runLoop();
 
     if(debug && (usbElapsCounter >=  usbDebugRate) ) {
       Serial.println("BOW DEBUG DATA");
@@ -118,12 +124,15 @@ void loop() {
       Serial.println("STERN DEBUG DATA");
       sternController.printDebug();
     }
+    
     usbElapsCounter++;
   }
 }
 
 /** INTERRUPT SERVICE ROUTINES */
-
+//    These really should be part of the Motor class
+//    but the Arduino environment does not allow
+//    interrupts to be defined inside objects
 void countBow() {
   if (millis() - lastBowCounted > 40 || millis() - lastBowCounted < 0) { // this essentially "debounces" our rotation sensor
     if (digitalRead(ROT_PINS[BOW]) == LOW) { // double check
