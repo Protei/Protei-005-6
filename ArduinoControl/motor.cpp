@@ -209,20 +209,24 @@ int Motor::getCntFlag() {
 int Motor::calibrate() {
   int totalRotations = 0;
   
+  // move the carriage to the low position
   while (move(-170) != -1000);
   
+  // then, move it back towards the high position (in calibration mode)
   while (move(170, 1) != 1000);
   
   Serial.println(rotations);
   totalRotations += rotations;
   rotations = 0;
   
+  // count again, going back to the low position
   while (move(-170, 1) != -1000);
   
   Serial.println(rotations);
   totalRotations -= rotations;
   rotations = 0;
   
+  // repeat the above again, this time at full speed
   while (move(255, 1) != 1000);
   
   Serial.println(rotations);
@@ -233,6 +237,7 @@ int Motor::calibrate() {
   
   Serial.println(rotations);
   totalRotations -= rotations;
-  
+ 
+  // return the average rotation count
   return (totalRotations/4);
 }
